@@ -28,13 +28,9 @@ def makeEmptyConfFile():
 		config.add_section(outputsection)
 		config.set(outputsection, 'input-controlled','never')
 
-# Writing our configuration file to 'example.cfg'
 	with open(filename, 'wb') as configfile:
     		config.write(configfile)
 
-
-#makeEmptyConfFile()
-#config = ConfigParser.RawConfigParser()
 
 buttonConf=[False]*16
 ioConf=[False]*1024
@@ -184,18 +180,6 @@ def writeConfToFile():
 	for x in range(0,16):
 		if(buttonConf[x]==True):
 			configwriter.set(sectionList[x], 'switch-type', 'toggle-switch')
-	
-
-
-
-
-	#for x in range(0,1024):
-		#if x<64:
-		#	if ioConf[x]==True:
-							
-		##	print("i0to7: son"+str(x/8)+sectionList[x/8])
-		#if x>63 and x<128:
-		#	print("i0to7: soff")
 		
 			
 	
@@ -204,7 +188,6 @@ def writeConfToFile():
 		shortOff = []
 		longOn = []
 		longOff = []
-		
 		
 		if sectionList.index(section)>7:
 			skip = 512
@@ -239,14 +222,7 @@ def writeConfToFile():
 			if x>7 and ioConf[x-8+256+64+128+multiplier+skip]==True:
 				longOff.append(x)
 
-
 		
-		
-		#shortOn = map(int,config.get(sections, 'short-on').split(','))
-		#print("Section: "+str(sectionList.index(sections))+", shortOn: "+str(shortOn))
-	#	shortOff = map(int,config.get(sections, 'short-off').split(','))
-	#		print("Section: "+str(sectionList.index(sections))+", shortOff: "+str(shortOff))
-	#	except:
 ######################### finally, write to file ##################################
 		configwriter.set(section, 'short-on', ','.join(map(str,shortOn)))
 		configwriter.set(section, 'short-off', ','.join(map(str,shortOff)))
@@ -261,16 +237,3 @@ def writeConfToFile():
 	with open(filename, 'wb') as configfile:
     		configwriter.write(configfile)
 
-
-#makeEmptyConfFile()
-#readConfFromFile()
-#writeConfToFile()
-#blahconfiwas=[False]*1024
-#blahconfiwas[1000]=True
-#if ( blahconfiwas[1000]==True ):
-#	print("Es ist wahr!")
-#print(blahconfiwas)
-
-#for x in xrange(len(ioConf)):
-#	if ioConf[x]==True:
-#		print("Bit" + str(x) + ": " + str(ioConf[x]))

@@ -15,25 +15,19 @@ from pymodbus.transaction import ModbusRtuFramer
 #log.setLevel(logging.DEBUG)
 
 
-#count= the number of registers to read
 baudrate = 38400
 parity = 'N'
 port = "/dev/ttyUSB0"
 unit=13 # the slave unit this request is targeting
-#address= the starting address to read from
-
 
 IOcffromDevice = [False]*1024
 buttonConf = [False]*16
 oConfFromDevice = [False]*32
 cmdRegisters = [0]*3
-#afor x in range(0, 1023):
-#	IOcffromDevice[x]=False
 
 def readConfs():
 
 	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate)
-	#client = ModbusClient("rtu", "/dev/ttyusB0", 1, 8, 'N', 38400)
 	try:
 		connection = client.connect()
 		result0 = client.read_coils(2000,512,unit=unit)
@@ -158,7 +152,4 @@ elif (args.command == "store"):
 		
 		
 else:
-	
-#	blah = [0,5,3,6,5,2]
-#	print blah[0:4]
 	print("Invalid command. Allowed commands: upload, download, store, compare")

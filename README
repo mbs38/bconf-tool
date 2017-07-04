@@ -1,0 +1,19 @@
+Config file syntax:
+
+######## Example 1
+[Input1]
+short-on = 4
+short-off = 4 
+#Meaning: toggle Output4 when the button connected to Input1 is pressed
+
+######## Example 2
+[Input1]
+short-on = 4 
+#Meaning: switch on Output4 when the button connected to Input1 is pressed
+
+
+######## Example 3
+[Input1]
+short-off = 4 
+#Meaning: switch off Output4 when the button connected to Input1 is pressed
+

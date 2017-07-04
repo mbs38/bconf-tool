@@ -35,24 +35,28 @@ def makeEmptyConfFile():
 buttonConf=[False]*16
 ioConf=[False]*1024
 oConf=[False]*32
-global timeoutThr
-global longPushThr
 longPushThr=0
 timeoutThr=0
 
 def readConfFromFile():
 	global filename
+	global timeoutThr
+	global longPushThr
 	config.read(filename)
 	try:
+		#global longPushThr
 		longPushThr = int(config.get('Global', 'long-push-threshold'))
 		#print("Long-push-thr: "+str(longPushThr))
 	except:
+		#global longPushThr
 		longPushThr = 30
 		#print("no long push threshold in config file")
 	try:	
+	#	global timeoutThr
 		timeoutThr = int(config.get('Global', 'timeout'))
 		#print("Timeout: "+str(timeoutThr))
 	except:
+	#	global timeoutThr
 		timeoutThr = 0
 		#print("no timeout thresold in config file")
 

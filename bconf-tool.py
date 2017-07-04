@@ -18,7 +18,7 @@ from pymodbus.transaction import ModbusRtuFramer
 baudrate = 38400
 parity = 'N'
 port = "/dev/ttyUSB0"
-unit=13 # the slave unit this request is targeting
+unit=0 # the slave unit this request is targeting
 
 IOcffromDevice = [False]*1024
 buttonConf = [False]*16
@@ -100,9 +100,9 @@ def store():
 
 def upload():
 	abusliconf.readConfFromFile()
-	
 	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate)
 	try:
+		
 		connection = client.connect()
 		result0 = client.write_coils(2000,abusliconf.ioConf[0:512],unit=unit)
 		result0 = client.write_coils(2512,abusliconf.ioConf[512:1024],unit=unit)

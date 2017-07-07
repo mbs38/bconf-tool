@@ -100,7 +100,7 @@ def store():
 
 def upload():
 	abusliconf.readConfFromFile()
-	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate)
+	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
 	try:
 		
 		connection = client.connect()

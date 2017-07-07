@@ -25,9 +25,29 @@ buttonConf = [False]*16
 oConfFromDevice = [False]*32
 cmdRegisters = [0]*3
 
+def probe():
+	try:
+		client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
+		connection = client.connect()
+		result0 = client.read_coils(2000,1,unit=unit)
+		client.close()
+	except:
+		print ("Serial error.")
+		client.close()
+	else:
+		try:
+			result0.string
+		except:
+			client.close()
+			return True
+		else:
+			client.close()
+			print("Client unreachable!")
+			return False
+
 def readConfs():
 
-	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate)
+	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout = 0.5)
 	try:
 		connection = client.connect()
 		result0 = client.read_coils(2000,512,unit=unit)
@@ -110,8 +130,9 @@ def upload():
 		result3 = client.write_coils(3056,abusliconf.buttonConf,unit=unit)
 		result4 = client.write_register(2001,abusliconf.longPushThr,unit=unit)
 		result4 = client.write_register(2002,abusliconf.timeoutThr,unit=unit)
+		print("Upload done.")
 	except:
-		print("Modbus error.")
+		print("Modbus error during upload.")
 	client.close()
 
 parser = argparse.ArgumentParser()
@@ -123,33 +144,42 @@ args = parser.parse_args()
 unit = args.address
 abusliconf.filename = args.file
 if (args.command == "download"):
-	readConfs()
-	abusliconf.buttonConf=buttonConf
-	abusliconf.ioConf=IOcffromDevice
-	abusliconf.oConf=oConfFromDevice
-#	print(longpushThrFromDevice)
-	abusliconf.longPushThr=cmdRegisters[1]
-	abusliconf.timeoutThr=cmdRegisters[2]
-	abusliconf.writeConfToFile()
-	print ("Written to file: "+abusliconf.filename)
+	if probe():
+		readConfs()
+		abusliconf.buttonConf=buttonConf
+		abusliconf.ioConf=IOcffromDevice
+		abusliconf.oConf=oConfFromDevice
+		abusliconf.longPushThr=cmdRegisters[1]
+		abusliconf.timeoutThr=cmdRegisters[2]
+		abusliconf.writeConfToFile()
+		print ("Written to file: "+abusliconf.filename)
+	
+		if(compare()):
+			print("Verification: pass")
 
-	if(compare()):
-		print("Verification: pass")
+
 elif (args.command == "compare"):
-	if(compare()):
-		print("Verification: pass")
+	if probe():
+		if compare():
+			print("Verification: pass")
+
+
 elif (args.command == "upload"):
-	print("Please wait, this might take a couple of seconds..")
-	upload()
-	if(compare()):
-		print("Verification: pass")
+		if probe():
+			print("Uploading. Please wait, this might take a couple of seconds..")
+			upload()				
+			print("Comparing.")
+			if(compare()):
+				print("Verification: pass")
+	
+
 elif (args.command == "store"):
-	if(compare()):
-		print("Verification: pass")
-		store()
-	else:
-		print("Cannot write to EEPROM!")
-		
+	if probe():
+		if(compare()):
+			print("Verification: pass")
+			store()
+		else:
+			print("Cannot write to EEPROM!")
 		
 else:
 	print("Invalid command. Allowed commands: upload, download, store, compare")

@@ -19,6 +19,27 @@ port = "/dev/ttyUSB0"
 
 global newAdr
 
+def probe():
+	try:
+		client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
+		connection = client.connect()
+		result0 = client.read_coils(2000,1,unit=unit)
+		client.close()
+	except:
+		print ("Serial error.")
+		client.close()
+	else:
+		try:
+			result0.string
+		except:
+			client.close()
+			return True
+		else:
+			client.close()
+			print("Client unreachable!")
+			return False
+
+
 
 def chAdr():
 
@@ -49,5 +70,5 @@ parser.add_argument("newAddress", type=int, help="new device address")
 args = parser.parse_args()
 unit = args.address
 newAdr = args.newAddress
-chAdr()
-
+if probe():
+	chAdr()

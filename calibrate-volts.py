@@ -1,5 +1,6 @@
 # Ugly code following!     
 
+import time
 import math
 import array
 import pymodbus
@@ -18,7 +19,7 @@ baudrate = 38400
 parity = 'N'
 port = "/dev/ttyUSB0"
 
-global newAdr
+global actualVoltage
 
 def probe():
 	try:
@@ -44,39 +45,50 @@ def probe():
 
 
 def calibrate():
-	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate)
-	try:
+	
+		client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate)
 		connection = client.connect()
+		result = client.write_register(1001,38559,unit=unit) #read back value from eeprom
+		time.sleep(3)
 		oldTick = client.read_holding_registers(1002,1,unit=unit)
-		print("Old conversion factor: "+oldTick.registers[0])
+		print("Old conversion factor: "+str(oldTick.registers[0]))
+		oldVoltage = client.read_holding_registers(52,1,unit=unit)
+		print("Measured voltage according to client (millivolts): "+str(oldVoltage.registers[0]))
 		result = client.write_register(1002,1,unit=unit) #write new tick value
-		print("Measuring..")
-		sleep(2)
+		result = client.write_register(1001,39559,unit=unit) 
+		print("Set conversion factor to 1, measuring..")
+		time.sleep(3)
 		voltReg = client.read_holding_registers(52,1,unit=unit) #measure voltage
 		#calculate tick voltage:
-		newTick = round(actualVoltage / voltReg.registers[0],0)
-		int(newTick)
-		print("New conversion factor: "+newTick)
+		newTick = int(round(actualVoltage / voltReg.registers[0],0))
+		print("New conversion factor: "+str(newTick))
 		result = client.write_register(1002,newTick,unit=unit) #write new tick value
 		tickReg = client.read_holding_registers(1002,1,unit=unit) #read back tick value
 		if tickReg.registers[0] == newTick:
 			print("Write: ok")
-			result = client.write_register(1001,36745,unit=unit) #send store command
-		print("Store: ok")
-	except:
-		print("Failed!")
-	try:
-		sleep(0.5)
-		result = client.write_register(1001,38559,unit=unit) #read back value from eeprom
-		sleep(0.5)
-		tickReg = client.read_holding_registers(1002,1,unit=unit) #actually read tick value
-		if tickReg.registers[0] == newTick:
-			print("Verification: pass")
-		else:
-			print("Verification Failed!")
-	except:
-		print("Verification failed!")
-	client.close()
+			try:
+				result = client.write_register(1001,36745,unit=unit) #send store command
+				print("Store: ok")
+			except:
+				print("Store failed!")
+		try:
+			time.sleep(1)
+			result = client.write_register(1001,38559,unit=unit) #read back value from eeprom
+			time.sleep(1)
+			tickReg = client.read_holding_registers(1002,1,unit=unit) #actually read tick value
+			if tickReg.registers[0] == newTick:
+				print("Verification: pass")
+				
+				newMeasVoltage = client.read_holding_registers(52,1,unit=unit)
+				print("Measured voltage according to client (millivolts): "+str(newMeasVoltage.registers[0]))
+			else:
+				print("Verification Failed!")
+		except:
+			print("Verification failed!")
+		client.close()
+	
+#		print("Failed!")
+#		client.close()
 
 parser = argparse.ArgumentParser()
 
@@ -86,6 +98,8 @@ parser.add_argument("voltage", type=int, help="measured voltage at device in mil
 args = parser.parse_args()
 unit = args.address
 actualVoltage = args.voltage
-newTick = 40
 if probe():
-	calibrate()
+	try:
+		calibrate()
+	except:
+		print("Failed!")

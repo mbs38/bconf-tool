@@ -23,24 +23,26 @@ def dassert(deferred, callback):
         assert(value)
     deferred.addCallback(lambda r: _assertor(callback(r)))
     deferred.addErrback(lambda  _: _assertor(False))
+try:
+	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.05)
 
-client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.05)
-
-
-for x in range(1,255):
-	sys.stdout.write("\r"+str(x))
-	sys.stdout.flush()
-	connection = client.connect()
-	outp=client.read_coils(0,1,unit=x)
-	try:
-		blah=outp.bits[0]
-		sys.stdout.write("\b\b\b")
+	for x in range(1,255):
+		sys.stdout.write("\r"+str(x))
 		sys.stdout.flush()
-		print("Device found, address: "+str(x))
-	except:
-		failed=failed+1
+		connection = client.connect()
+		outp=client.read_coils(0,1,unit=x)
+		try:
+			blah=outp.bits[0]
+			sys.stdout.write("\b\b\b")
+			sys.stdout.flush()
+			print("Device found, address: "+str(x))
+		except:
+			failed=failed+1
+	sys.stdout.write("\b\b\b")
+	sys.stdout.write("Scan finished.")
+	sys.stdout.write("\n")
+	sys.stdout.flush()
+except:
+	print("Serial error. Is "+port+" available?")
+
 client.close()
-sys.stdout.write("\b\b\b")
-sys.stdout.write("Scan finished.")
-sys.stdout.write("\n")
-sys.stdout.flush()

@@ -32,7 +32,7 @@ def probe():
 		result0 = client.read_coils(2000,1,unit=unit)
 		client.close()
 	except:
-		print ("Serial error.")
+		print ("Serial error. Is "+port+" available?")
 		client.close()
 	else:
 		try:

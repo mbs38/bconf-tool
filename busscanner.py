@@ -24,7 +24,7 @@ def dassert(deferred, callback):
     deferred.addCallback(lambda r: _assertor(callback(r)))
     deferred.addErrback(lambda  _: _assertor(False))
 try:
-	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.05)
+	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.1)
 
 	for x in range(1,255):
 		sys.stdout.write("\r"+str(x))

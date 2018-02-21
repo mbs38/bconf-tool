@@ -55,8 +55,9 @@ def calibrate():
 		oldVoltage = client.read_holding_registers(52,1,unit=unit)
 		print("Measured voltage according to client (millivolts): "+str(oldVoltage.registers[0]))
 		result = client.write_register(1002,1,unit=unit) #write new tick value
+		result = client.write_register(1003,0,unit=unit) #write correction val to zero
 		result = client.write_register(1001,39559,unit=unit) 
-		print("Set conversion factor to 1, measuring..")
+		print("Set conversion factor to 1 and correction value to 0, measuring..")
 		time.sleep(3)
 		voltReg = client.read_holding_registers(52,1,unit=unit) #measure voltage
 		#calculate tick voltage:
@@ -64,7 +65,14 @@ def calibrate():
 		print("New conversion factor: "+str(newTick))
 		result = client.write_register(1002,newTick,unit=unit) #write new tick value
 		tickReg = client.read_holding_registers(1002,1,unit=unit) #read back tick value
-		if tickReg.registers[0] == newTick:
+		result = client.write_register(1001,39559,unit=unit)
+		preCorrVoltage = client.read_holding_registers(52,1,unit=unit)
+		corrVal=int(actualVoltage-preCorrVoltage.registers[0])
+		print("New correction value: "+str(corrVal))
+		result = client.write_register(1003,corrVal,unit=unit)
+		corrValReg = client.read_holding_registers(1003,1,unit=unit)
+		result = client.write_register(1001,39559,unit=unit)
+		if tickReg.registers[0] == newTick and corrValReg.registers[0] == corrVal:
 			print("Write: ok")
 			try:
 				result = client.write_register(1001,36745,unit=unit) #send store command
@@ -76,7 +84,9 @@ def calibrate():
 			result = client.write_register(1001,38559,unit=unit) #read back value from eeprom
 			time.sleep(1)
 			tickReg = client.read_holding_registers(1002,1,unit=unit) #actually read tick value
-			if tickReg.registers[0] == newTick:
+			corrValReg = client.read_holding_registers(1003,1,unit=unit) #actuall read corr val
+			
+			if tickReg.registers[0] == newTick and corrValReg.registers[0] == corrVal:
 				print("Verification: pass")
 				
 				newMeasVoltage = client.read_holding_registers(52,1,unit=unit)

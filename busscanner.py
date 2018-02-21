@@ -35,7 +35,18 @@ try:
 			blah=outp.bits[0]
 			sys.stdout.write("\b\b\b")
 			sys.stdout.flush()
-			print("Device found, address: "+str(x))
+			sys.stdout.write("Device found, address: "+str(x))
+			try:
+				fw = client.read_holding_registers(10000,1,unit=x) 
+				sys.stdout.write(", version-id: "+str(fw.registers[0]))
+				if(fw.registers[0]>20000 and fw.registers[0]<30000):
+					sys.stdout.write(", device type: Hut")
+				if(fw.registers[0]>10000 and fw.registers[0]<20000):
+					sys.stdout.write(", device type: WBCv2")
+				sys.stdout.write("\n")
+			except:
+				sys.stdout.write("\n")
+			sys.stdout.flush()
 		except:
 			failed=failed+1
 	sys.stdout.write("\b\b\b")

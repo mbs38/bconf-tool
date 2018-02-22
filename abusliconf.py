@@ -27,6 +27,8 @@ def makeEmptyConfFile():
 	for outputsection in outputList:
 		config.add_section(outputsection)
 		config.set(outputsection, 'input-controlled','never')
+		config.set(outputsection, 'timer-controlled','never')
+		config.set(outputsection, 'timeout-value', 0)
 
 	with open(filename, 'wb') as configfile:
     		config.write(configfile)
@@ -35,6 +37,8 @@ def makeEmptyConfFile():
 buttonConf=[False]*16
 ioConf=[False]*1024
 oConf=[False]*32
+timerOConf=[False]*32
+timervals=[0]*16
 longPushThr=0
 timeoutThr=0
 
@@ -154,6 +158,24 @@ def readConfFromFile():
 			oConf[outputList.index(outputsection)]=True
 			oConf[outputList.index(outputsection)+16]=True
 
+		try:
+			oConfStr = config.get(outputsection, 'timer-controlled')
+		except:
+			oConfStr=[]
+		if oConfStr == 'timeout-only':
+			timerOConf[outputList.index(outputsection)+16]=True
+		elif oConfStr == 'always':
+			timerOConf[outputList.index(outputsection)]=True
+			timerOConf[outputList.index(outputsection)+16]=True
+		
+		try:
+			timervals[outputList.index(outputsection)] = int(config.get(outputsection, 'timeout-value'))
+		except:
+			timervals[outputList.index(outputsection)] = 0
+		if timervals[outputList.index(outputsection)] > 65535:
+			timervals[outputList.index(outputsection)] = 0
+		if timervals[outputList.index(outputsection)] < 0:
+			timervals[outputList.index(outputsection)] = 0
 ########################################################################################
 #@brief: writeConfTofile(), write configuration data to file
 def writeConfToFile():
@@ -179,6 +201,8 @@ def writeConfToFile():
 		except:
 			print("Section "+outputsection+" already exists, overwriting")
 		configwriter.set(outputsection, 'input-controlled','never')
+		configwriter.set(outputsection, 'timer-controlled','never')
+		configwriter.set(outputsection, 'timeout-value',0)
 ####################### prepare lists for config file #####################################
 
 	for x in range(0,16):
@@ -238,6 +262,14 @@ def writeConfToFile():
 			configwriter.set(outputsection, 'input-controlled','timeout-only')
 		if(oConf[outputList.index(outputsection)]):
 			configwriter.set(outputsection, 'input-controlled','always')
+	
+	for outputsection in outputList:
+		if(timerOConf[outputList.index(outputsection)+16]):
+			configwriter.set(outputsection, 'timer-controlled','timeout-only')
+		if(timerOConf[outputList.index(outputsection)]):
+			configwriter.set(outputsection, 'timer-controlled','always')
+		configwriter.set(outputsection,'timeout-value',timervals[outputList.index(outputsection)])
+	
 	with open(filename, 'wb') as configfile:
     		configwriter.write(configfile)
 

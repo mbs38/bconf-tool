@@ -23,7 +23,9 @@ unit=0 # the slave unit this request is targeting
 IOcffromDevice = [False]*1024
 buttonConf = [False]*16
 oConfFromDevice = [False]*32
+timerOConfFromDevice = [False]*32
 cmdRegisters = [0]*3
+timeoutvalsFromDevice = [0]*16
 
 def probe():
 	try:
@@ -55,7 +57,9 @@ def readConfs():
 		result2 = client.read_coils(3024,32,unit=unit)
 		result3 = client.read_coils(3056,16,unit=unit)
 		result4 = client.read_holding_registers(2000,3,unit=unit)
-		
+		result5 = client.read_coils(3072,32,unit=unit)
+		result6 = client.read_holding_registers(4000,16,unit=unit)		
+
 		cmdRegisters[1]=int(result4.registers[1])
 		cmdRegisters[2]=int(result4.registers[2])
 		for x in range(0, 512):
@@ -65,8 +69,12 @@ def readConfs():
 			buttonConf[x]=result3.bits[x]
 		for x in range(0, 32):
 			oConfFromDevice[x]=result2.bits[x]
+		for x in range(0, 32):
+			timerOConfFromDevice[x]=result5.bits[x]
+		for x in range(0, 16):
+			timeoutvalsFromDevice[x]=int(result6.registers[x])
 	except:
-		print("Modbus error.")
+		print("Modbus error. Maybe wrong device firmware? Need at least version 20002 or 10003.")
 	client.close()
 
 def compare():
@@ -90,6 +98,11 @@ def compare():
 	else:
 		testResult=1
 		print("output configuration doesn't match!")
+	if(timerOConfFromDevice==abusliconf.timerOConf):
+		print("Timer output configuration matches.")
+	else:
+		testResult=1
+		print("Timer output configuration doesn't match!")
 	if(abusliconf.longPushThr==cmdRegisters[1]):
 		print("longpush threshold matches.")
 	else:
@@ -100,7 +113,11 @@ def compare():
 	else:
 		print("bus timeout threshold doesn't match!")
 		testResult=1
-
+	if(abusliconf.timervals==timeoutvalsFromDevice):
+		print("Output timeout values match.")
+	else:
+		print("Output timeout values doesn't match!")
+		testResult=1
 	if testResult == 1:
 		print("ERROR: The device's configuration doesn't match the config file!")
 		return False
@@ -127,9 +144,11 @@ def upload():
 		result0 = client.write_coils(2000,abusliconf.ioConf[0:512],unit=unit)
 		result0 = client.write_coils(2512,abusliconf.ioConf[512:1024],unit=unit)
 		result2 = client.write_coils(3024,abusliconf.oConf,unit=unit)
+		result5 = client.write_coils(3072,abusliconf.timerOConf,unit=unit)
 		result3 = client.write_coils(3056,abusliconf.buttonConf,unit=unit)
 		result4 = client.write_register(2001,abusliconf.longPushThr,unit=unit)
 		result4 = client.write_register(2002,abusliconf.timeoutThr,unit=unit)
+		result6 = client.write_registers(4000,abusliconf.timervals,unit=unit)
 		print("Upload done.")
 	except:
 		print("Modbus error during upload.")
@@ -149,8 +168,10 @@ if (args.command == "download"):
 		abusliconf.buttonConf=buttonConf
 		abusliconf.ioConf=IOcffromDevice
 		abusliconf.oConf=oConfFromDevice
+		abusliconf.timerOCont=timerOConfFromDevice
 		abusliconf.longPushThr=cmdRegisters[1]
 		abusliconf.timeoutThr=cmdRegisters[2]
+		abusliconf.timervals=timeoutvalsFromDevice
 		abusliconf.writeConfToFile()
 		print ("Written to file: "+abusliconf.filename)
 	

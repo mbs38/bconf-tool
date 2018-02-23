@@ -29,7 +29,7 @@ def makeEmptyConfFile():
 		config.set(outputsection, 'input-controlled','never')
 		config.set(outputsection, 'timer-controlled','never')
 		config.set(outputsection, 'timeout-value', 0)
-
+		config.set(outputsection, 'default-state', 'off')
 	with open(filename, 'wb') as configfile:
     		config.write(configfile)
 
@@ -41,6 +41,7 @@ timerOConf=[False]*32
 timervals=[0]*16
 longPushThr=0
 timeoutThr=0
+outDefaults=[False]*16
 
 def readConfFromFile():
 	global filename
@@ -176,6 +177,15 @@ def readConfFromFile():
 			timervals[outputList.index(outputsection)] = 0
 		if timervals[outputList.index(outputsection)] < 0:
 			timervals[outputList.index(outputsection)] = 0
+
+		try:
+			if(config.get(outputsection, 'default-state')=='on'):
+				outDefaults[outputList.index(outputsection)]=True
+			else:
+				outDefaults[outputList.index(outputsection)]=False
+		except:
+			outDefaults[outputList.index(outputsection)]=False
+		
 ########################################################################################
 #@brief: writeConfTofile(), write configuration data to file
 def writeConfToFile():
@@ -203,6 +213,8 @@ def writeConfToFile():
 		configwriter.set(outputsection, 'input-controlled','never')
 		configwriter.set(outputsection, 'timer-controlled','never')
 		configwriter.set(outputsection, 'timeout-value',0)
+		configwriter.set(outputsection, 'default-state', 'off')
+
 ####################### prepare lists for config file #####################################
 
 	for x in range(0,16):
@@ -269,6 +281,12 @@ def writeConfToFile():
 		if(timerOConf[outputList.index(outputsection)]):
 			configwriter.set(outputsection, 'timer-controlled','always')
 		configwriter.set(outputsection,'timeout-value',timervals[outputList.index(outputsection)])
+		
+	for outputsection in outputList:
+		if(outDefaults[outputList.index(outputsection)]):
+			configwriter.set(outputsection, 'default-state', 'on')
+		else:
+			configwriter.set(outputsection, 'default-state', 'off')
 	
 	with open(filename, 'wb') as configfile:
     		configwriter.write(configfile)

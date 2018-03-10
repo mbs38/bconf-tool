@@ -91,7 +91,7 @@ def readConfs():
 	try:
 		connection = client.connect()
 		result0 = client.read_coils(2000,512,unit=unit)
-		result1 = client.read_coils(2511,512,unit=unit)
+		result1 = client.read_coils(2512,512,unit=unit)
 		result2 = client.read_coils(3024,32,unit=unit)
 		result3 = client.read_coils(3056,16,unit=unit)
 		result4 = client.read_holding_registers(2000,3,unit=unit)

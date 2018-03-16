@@ -32,7 +32,10 @@ global erg
 SwVersions = ['','reading out firmware version','','timer controlled outputs, default output states on startup']
 
 def getFeatures(version):
-	if(version>20000):
+	if(version>30000):
+		version=version-30000
+		print("Device type is: Li")
+	elif(version>20000):
 		version=version-20000
 		print("Device type is: Hut")
 	else:

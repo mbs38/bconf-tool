@@ -41,6 +41,7 @@ def probe():
 			return False
 
 def printStates(outs,ins):
+    sys.stdout.write("Press ENTER to quit!\n")
     sys.stdout.write("Device address: "+str(unit)+"\n")
     sys.stdout.write("Outputs        Inputs\n")
     for x in range(0,16):
@@ -55,7 +56,6 @@ def printStates(outs,ins):
         sys.stdout.write("\033[F")
 
     sys.stdout.flush()
-    
 
 
 def monitor():
@@ -64,8 +64,8 @@ def monitor():
 	try:
 		client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
 		connection = client.connect()
-                
-                while True:
+                killvar = 1
+                while killvar == 1:
                     try:
                         coils = client.read_coils(0,16,unit=unit)
                         discretes = client.read_discrete_inputs(0,16,unit=unit)
@@ -85,6 +85,9 @@ def monitor():
                         outs = ["Err"]*16
                         ins = ["Err"]*16
                     
+                    kin=sys.stdin.readline()
+                    if(kin>0):
+                        killvar=9
 
                         
                     

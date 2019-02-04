@@ -20,6 +20,11 @@ port = "/dev/ttyUSB0"
 
 global newAdr
 
+global oldDiscretes
+global oldCoils
+global coilsChanged
+global discretesChanged
+
 def probe():
 	try:
 		client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
@@ -52,7 +57,7 @@ def printStates(outs,ins):
         if(ins[x]=="On"):
             sys.stdout.write(" ")
         sys.stdout.write("\n")
-    for x in range(0,18):
+    for x in range(0,19):
         sys.stdout.write("\033[F")
 
     sys.stdout.flush()
@@ -60,35 +65,53 @@ def printStates(outs,ins):
 
 def monitor():
 
-	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate)
+#	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate)
 	try:
 		client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
 		connection = client.connect()
+                
+                oldCoils = client.read_coils(0,16,unit=unit)
+                oldDiscretes = client.read_discrete_inputs(0,16,unit=unit)
+                discretesChanged = [False]*16
+                coilsChanged = [False]*16
+                
+                blahvar = 0
                 killvar = 1
                 while killvar == 1:
                     try:
                         coils = client.read_coils(0,16,unit=unit)
                         discretes = client.read_discrete_inputs(0,16,unit=unit)
-        #                holding0 = client.read_holding_registers(0,16,unit=unit)
                         outs = ["Off"]*16
                         ins = ["Off"]*16
-                        for x in range(0,15):
+                        for x in range(0,16):
+                            if(coils.bits[x] != oldCoils.bits[x]):
+                                coilsChanged[x] = True
                             if(coils.bits[x] == True):
                                 outs[x]="On"
+                            if(coilsChanged[x] == True):
+                                outs[x]=u"\u001b[31m"+outs[x]+u"\u001b[0m"
 
-                        for x in range(0,15):
+                        for x in range(0,16):
+                            if(discretes.bits[x] != oldDiscretes.bits[x]):
+                                discretesChanged[x] = True
                             if(discretes.bits[x] == True):
                                 ins[x]="On"
-                        printStates(outs,ins)
+                            if(discretesChanged[x] == True):
+                                ins[x]=u"\u001b[31m"+ins[x]+u"\u001b[0m"
                     except:
                         print("Polling error!")
                         outs = ["Err"]*16
                         ins = ["Err"]*16
                     
+                    printStates(outs,ins)
+                    #blahvar=blahvar+4
+                    #print(blahvar)
                     kin=sys.stdin.readline()
                     if(kin>0):
                         killvar=9
+                        sys.exit(1)
 
+#sys.stdout.write("das"+u"\u001b[31m"+"blah"+u"\u001b[0m"+"hundszahn")
                         
                     
                 client.close()

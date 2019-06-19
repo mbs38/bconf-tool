@@ -17,6 +17,7 @@ def makeEmptyConfFile():
 	config.add_section('Global')
 	config.set('Global', 'timeout', 20)
 	config.set('Global', 'long-push-threshold','')
+	config.set('Global', 'brownout-threshold', 0)
 	for section in sectionList:
 		config.add_section(section)
 		config.set(section, 'short-on', '')
@@ -41,12 +42,14 @@ timerOConf=[False]*32
 timervals=[0]*16
 longPushThr=0
 timeoutThr=0
+brownoutThr=0
 outDefaults=[False]*16
 
 def readConfFromFile():
 	global filename
 	global timeoutThr
 	global longPushThr
+        global brownoutThr
 	config.read(filename)
 	try:
 		#global longPushThr
@@ -64,6 +67,11 @@ def readConfFromFile():
 	#	global timeoutThr
 		timeoutThr = 0
 		#print("no timeout thresold in config file")
+
+        try:
+		brownoutThr = int(config.get('Global', 'brownout-threshold'))
+	except:
+		brownoutThr = 0
 
 	for sections in sectionList:
 		try:
@@ -194,6 +202,7 @@ def writeConfToFile():
 	configwriter.add_section('Global')
 	configwriter.set('Global', 'timeout', timeoutThr)
 	configwriter.set('Global', 'long-push-threshold', longPushThr)
+	configwriter.set('Global', 'brownout-threshold', brownoutThr)
 	for section in sectionList:
 		try:
 			configwriter.add_section(section)

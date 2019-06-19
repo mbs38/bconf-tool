@@ -25,11 +25,11 @@ IOcffromDevice = [False]*1024
 buttonConf = [False]*16
 oConfFromDevice = [False]*32
 timerOConfFromDevice = [False]*32
-cmdRegisters = [0]*3
+cmdRegisters = [0]*5
 timeoutvalsFromDevice = [0]*16
 outDefaultsFromDevice = [False]*16
 global erg
-SwVersions = ['','reading out firmware version','','timer controlled outputs, default output states on startup']
+SwVersions = ['','reading out firmware version','','timer controlled outputs, default output states on startup','','','','','','brownout']
 
 def getFeatures(version):
 	if(version>30000):
@@ -52,7 +52,7 @@ def getFeatures(version):
 		print("/****************************************/")
 		print("The following features won't be available:")
 		for x in range((version+1),len(SwVersions)):
-			print("- "+SwVersions[x])
+			print(" "+SwVersions[x])
 	return version
 
 def probe():
@@ -97,8 +97,11 @@ def readConfs():
 		result1 = client.read_coils(2512,512,unit=unit)
 		result2 = client.read_coils(3024,32,unit=unit)
 		result3 = client.read_coils(3056,16,unit=unit)
-		result4 = client.read_holding_registers(2000,3,unit=unit)
-		if(erg > 2):
+                if erg < 9:
+                    result4 = client.read_holding_registers(2000,3,unit=unit)
+                else:
+		    result4 = client.read_holding_registers(2000,5,unit=unit)
+                if(erg > 2):
 			result5 = client.read_coils(3072,32,unit=unit)
 			result6 = client.read_holding_registers(4000,16,unit=unit)		
 			result7 = client.read_coils(3104,16,unit=unit)
@@ -108,8 +111,10 @@ def readConfs():
 				timeoutvalsFromDevice[x]=int(result6.registers[x])
 			for x in range(0, 16):
 				outDefaultsFromDevice[x]=result7.bits[x]
-		cmdRegisters[1]=int(result4.registers[1])
+                cmdRegisters[1]=int(result4.registers[1])
 		cmdRegisters[2]=int(result4.registers[2])
+                if erg > 8:
+                    cmdRegisters[3]=int(result4.registers[3])
 		for x in range(0, 512):
 			IOcffromDevice[x] = result0.bits[x]
 			IOcffromDevice[x+512] = result1.bits[x]
@@ -144,16 +149,22 @@ def compare():
 		testResult=1
 		print("output configuration doesn't match!")
 	if(abusliconf.longPushThr==cmdRegisters[1]):
-		print("longpush threshold matches.")
+		print("longpush threshold matches. "+"("+str(cmdRegisters[1])+")")
 	else:
 		testResult=1
 		print("longpush threshold doesn't match!")
 	if(abusliconf.timeoutThr==cmdRegisters[2]):
-		print("bus timeout threshold matches.")
+		print("bus timeout threshold matches. "+"("+str(cmdRegisters[2])+")")
 	else:
 		print("bus timeout threshold doesn't match!")
 		testResult=1
-	if(erg>2):
+        if erg > 8:
+                if(abusliconf.brownoutThr==cmdRegisters[3]):
+	    	        print("brownout threshold matches. "+"("+str(cmdRegisters[3])+")")
+	        else:
+	                print("brownout threshold doesn't match!")
+		        testResult=1
+        if(erg>2):
 		if(timerOConfFromDevice==abusliconf.timerOConf):
 			print("timer output configuration matches.")
 		else:
@@ -214,6 +225,8 @@ def upload():
 		result3 = client.write_coils(3056,abusliconf.buttonConf,unit=unit)
 		result4 = client.write_register(2001,abusliconf.longPushThr,unit=unit)
 		result4 = client.write_register(2002,abusliconf.timeoutThr,unit=unit)
+                if erg > 8:
+		        result4 = client.write_register(2003,abusliconf.brownoutThr,unit=unit)
 		print("Upload done.")
 	except:
 		print("Modbus error during upload.")
@@ -237,6 +250,8 @@ if (args.command == "download"):
 		abusliconf.timerOCont=timerOConfFromDevice
 		abusliconf.longPushThr=cmdRegisters[1]
 		abusliconf.timeoutThr=cmdRegisters[2]
+                if erg > 8: 
+                        abusliconf.brownoutThr=cmdRegisters[3]
 		abusliconf.timervals=timeoutvalsFromDevice
 		abusliconf.outDefaults=outDefaultsFromDevice
 		abusliconf.writeConfToFile()
@@ -267,6 +282,8 @@ elif(args.command == "eeprom-download"):
 			abusliconf.timerOCont=timerOConfFromDevice
 			abusliconf.longPushThr=cmdRegisters[1]
 			abusliconf.timeoutThr=cmdRegisters[2]
+                        if erg >8:
+			    abusliconf.timeoutThr=cmdRegisters[3]
 			abusliconf.timervals=timeoutvalsFromDevice
 			abusliconf.outDefaults=outDefaultsFromDevice
 			abusliconf.writeConfToFile()

@@ -46,7 +46,7 @@ def probe():
 			return False
 
 def printStates(outs,ins):
-    sys.stdout.write("Press ENTER to quit!\n")
+    sys.stdout.write("\n")
     sys.stdout.write("Device address: "+str(unit)+"\n")
     sys.stdout.write("Outputs        Inputs\n")
     for x in range(0,16):
@@ -78,7 +78,7 @@ def monitor():
                 blahvar = 0
                 killvar = 1
                 while killvar == 1:
-                    try:
+                    if True:#try:
                         coils = client.read_coils(0,16,unit=unit)
                         discretes = client.read_discrete_inputs(0,16,unit=unit)
                         outs = ["Off"]*16
@@ -98,18 +98,18 @@ def monitor():
                                 ins[x]="On"
                             if(discretesChanged[x] == True):
                                 ins[x]=u"\u001b[31m"+ins[x]+u"\u001b[0m"
-                    except:
-                        print("Polling error!")
-                        outs = ["Err"]*16
-                        ins = ["Err"]*16
+                    #except:
+                       # print("Polling error!")
+                       # outs = ["Err"]*16
+                       # ins = ["Err"]*16
                     
                     printStates(outs,ins)
                     #blahvar=blahvar+4
                     #print(blahvar)
-                    kin=sys.stdin.readline()
-                    if(kin>0):
-                        killvar=9
-                        sys.exit(1)
+                    #kin=sys.stdin.readline()
+                    #if(kin>0):
+                       # killvar=9
+                      #  sys.exit(1)
 
 #sys.stdout.write("das"+u"\u001b[31m"+"blah"+u"\u001b[0m"+"hundszahn")
                         
@@ -128,4 +128,4 @@ unit = args.address
 
 
 if probe():
-	monitor()
+    monitor()

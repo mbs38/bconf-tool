@@ -114,10 +114,12 @@ def readConfs():
 				outDefaultsFromDevice[x]=result7.bits[x]
                 if erg > 9:
 			resultDescr = client.read_holding_registers(4016,8,unit=unit)
+                        global description
+                        description=""
                         for x in range(0, 8):
-                            description.append(chr(resultDescr[x] & 0xFF))
-                            description.append(chr((resultDescr[x] & 0xFF00)>>8))
-
+                                description=description+str(chr(resultDescr.registers[x] & 0xFF))
+                                description=description+str(chr((resultDescr.registers[x] & 0xFF00)>>8))
+                        description=description.rstrip(chr(0x00))
                 cmdRegisters[1]=int(result4.registers[1])
 		cmdRegisters[2]=int(result4.registers[2])
                 if erg > 8:
@@ -188,11 +190,11 @@ def compare():
 			print("output default states don't match!")
 			testResult=1
         if(erg>9):
-                if(abusliconf.description==description):
-		print("description matches. "+"("+description+")")
-	else:
-		print("description doesn't match!")
-		testResult=1       
+                if(repr(abusliconf.description)==repr(description)):
+		        print("description matches. "+"("+description+")")
+	        else:
+		        print("description doesn't match!")
+		        testResult=1       
         
         
         if testResult == 1:
@@ -227,7 +229,7 @@ def upload():
 	abusliconf.readConfFromFile()
 	
 	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
-	try:
+        try:
 		
 		connection = client.connect()
 		result0 = client.write_coils(2000,abusliconf.ioConf[0:512],unit=unit)
@@ -245,8 +247,11 @@ def upload():
                 if erg > 9:
                         descrAsInts = [0]*8
                         for x in range(0, 8):
-                                descrAsInts[x]=ord(abusliconf.description[x*2])|(ord(abusliconf.description[x*2+1])<<8)
-                        result5 = client.write_register(4016,descrAsInts,unit=unit)
+                                if (x*2)<len(abusliconf.description):
+                                        descrAsInts[x]=int(ord(abusliconf.description[x*2]))
+                                if (x*2+1)<len(abusliconf.description):
+                                        descrAsInts[x]=int(descrAsInts[x]|(ord(abusliconf.description[x*2+1])<<8))
+                        result5 = client.write_registers(4016,descrAsInts,unit=unit)
 		print("Upload done.")
 	except:
 		print("Modbus error during upload.")
@@ -272,6 +277,8 @@ if (args.command == "download"):
 		abusliconf.timeoutThr=cmdRegisters[2]
                 if erg > 8: 
                         abusliconf.brownoutThr=cmdRegisters[3]
+                if erg > 9:
+                        abusliconf.description=description
 		abusliconf.timervals=timeoutvalsFromDevice
 		abusliconf.outDefaults=outDefaultsFromDevice
 		abusliconf.writeConfToFile()
@@ -303,9 +310,12 @@ elif(args.command == "eeprom-download"):
 			abusliconf.longPushThr=cmdRegisters[1]
 			abusliconf.timeoutThr=cmdRegisters[2]
                         if erg >8:
-			    abusliconf.timeoutThr=cmdRegisters[3]
+			        abusliconf.timeoutThr=cmdRegisters[3]
 			abusliconf.timervals=timeoutvalsFromDevice
 			abusliconf.outDefaults=outDefaultsFromDevice
+                        if erg > 9:
+                                abusliconf.description=description
+                        abusliconf.brownoutThr=brownoutThr
 			abusliconf.writeConfToFile()
 			print ("Writing to file: "+abusliconf.filename)
 			if(compare()):

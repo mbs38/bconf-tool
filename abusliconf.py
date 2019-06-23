@@ -52,6 +52,7 @@ def readConfFromFile():
 	global timeoutThr
 	global longPushThr
         global brownoutThr
+        global description
 	config.read(filename)
 	try:
 		#global longPushThr

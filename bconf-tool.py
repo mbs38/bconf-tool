@@ -28,6 +28,7 @@ timerOConfFromDevice = [False]*32
 cmdRegisters = [0]*5
 timeoutvalsFromDevice = [0]*16
 outDefaultsFromDevice = [False]*16
+description = ""
 global erg
 SwVersions = ['','reading out firmware version','','timer controlled outputs, default output states on startup','','','','','','brownout']
 
@@ -111,6 +112,12 @@ def readConfs():
 				timeoutvalsFromDevice[x]=int(result6.registers[x])
 			for x in range(0, 16):
 				outDefaultsFromDevice[x]=result7.bits[x]
+                if erg > 9:
+			resultDescr = client.read_holding_registers(4016,8,unit=unit)
+                        for x in range(0, 8):
+                            description.append(chr(resultDescr[x] & 0xFF))
+                            description.append(chr((resultDescr[x] & 0xFF00)>>8))
+
                 cmdRegisters[1]=int(result4.registers[1])
 		cmdRegisters[2]=int(result4.registers[2])
                 if erg > 8:
@@ -180,7 +187,15 @@ def compare():
 		else:
 			print("output default states don't match!")
 			testResult=1
-	if testResult == 1:
+        if(erg>9):
+                if(abusliconf.description==description):
+		print("description matches. "+"("+description+")")
+	else:
+		print("description doesn't match!")
+		testResult=1       
+        
+        
+        if testResult == 1:
 		print("ERROR: The device's configuration doesn't match the config file!")
 		return False
 	else:
@@ -227,6 +242,11 @@ def upload():
 		result4 = client.write_register(2002,abusliconf.timeoutThr,unit=unit)
                 if erg > 8:
 		        result4 = client.write_register(2003,abusliconf.brownoutThr,unit=unit)
+                if erg > 9:
+                        descrAsInts = [0]*8
+                        for x in range(0, 8):
+                                descrAsInts[x]=ord(abusliconf.description[x*2])|(ord(abusliconf.description[x*2+1])<<8)
+                        result5 = client.write_register(4016,descrAsInts,unit=unit)
 		print("Upload done.")
 	except:
 		print("Modbus error during upload.")

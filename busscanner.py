@@ -37,12 +37,33 @@ try:
 			sys.stdout.flush()
 			sys.stdout.write("Device found, address: "+str(x))
 			try:
-				fw = client.read_holding_registers(10000,1,unit=x) 
-				sys.stdout.write(", version-id: "+str(fw.registers[0]))
-				if(fw.registers[0]>20000 and fw.registers[0]<30000):
+				fw = client.read_holding_registers(10000,1,unit=x)
+                                fw = fw.registers[0]
+				version = 0
+                                if(fw>30000):
+		                        version=fw-30000
+	                        elif(fw>20000):
+		                        version=fw-20000
+                                elif(fw>10000):
+			                version=fw-10000
+
+                                    
+                                sys.stdout.write(", version-id: "+str(fw))
+				if(fw>30000 and fw<40000):
+					sys.stdout.write(", device type: Li")
+				if(fw>20000 and fw<30000):
 					sys.stdout.write(", device type: Hut")
-				if(fw.registers[0]>10000 and fw.registers[0]<20000):
+				if(fw>10000 and fw<20000):
 					sys.stdout.write(", device type: WBCv2")
+                                if version>9:
+                                        resultDescr = client.read_holding_registers(4016,8,unit=x)
+                                        description=""
+                                        for x in range(0, 8):
+                                                description=description+str(chr(resultDescr.registers[x] & 0xFF))
+                                                description=description+str(chr((resultDescr.registers[x] & 0xFF00)>>8))
+                                                description=description.rstrip(chr(0x00))
+   
+					sys.stdout.write(", Description: "+description)
 				sys.stdout.write("\n")
 			except:
 				sys.stdout.write("\n")

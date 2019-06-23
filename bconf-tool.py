@@ -141,6 +141,10 @@ def compare():
 	print("Downloading from device "+str(unit))
 	readConfs()
 	abusliconf.readConfFromFile()
+        if len(abusliconf.description)>16:
+                print("ERROR! Description in config file too long! Maximum is 16 characters!")
+                exit()
+
 	testResult = 0
 	if(IOcffromDevice==abusliconf.ioConf):
 		print("input-output-assignments match.")
@@ -190,6 +194,8 @@ def compare():
 			print("output default states don't match!")
 			testResult=1
         if(erg>9):
+                print(repr(abusliconf.description))
+                print(repr(description))
                 if(repr(abusliconf.description)==repr(description)):
 		        print("description matches. "+"("+description+")")
 	        else:
@@ -228,7 +234,13 @@ def loadEEPROMcontent():
 def upload():
 	abusliconf.readConfFromFile()
 	
-	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
+        if len(abusliconf.description)>16:
+            print("ERROR! Description in config file too long! Maximum is 16 characters!")
+            exit()
+
+	print("Uploading. Please wait, this might take a couple of seconds..")
+	
+        client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
         try:
 		
 		connection = client.connect()
@@ -326,7 +338,6 @@ elif(args.command == "eeprom-download"):
 elif (args.command == "upload"):
 		if probe():
 			erg=getFeatures(getFwVersion())
-			print("Uploading. Please wait, this might take a couple of seconds..")
 			upload()				
 			print("Comparing.")
 			if(compare()):

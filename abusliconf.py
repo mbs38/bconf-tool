@@ -77,7 +77,7 @@ def readConfFromFile():
 		brownoutThr = 0
         
         try:
-		description = str(config.get('Global', 'description'))
+		description = str(config.get('Global', 'description')).rstrip(" ")
 	except:
 		description = "none"
 

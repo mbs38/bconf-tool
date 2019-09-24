@@ -30,7 +30,7 @@ timeoutvalsFromDevice = [0]*16
 outDefaultsFromDevice = [False]*16
 description = ""
 global erg
-SwVersions = ['','reading out firmware version','','timer controlled outputs, default output states on startup','','','','','','brownout','description']
+SwVersions = ['','reading out firmware version','','timer controlled outputs, default output states on startup','','','','','','brownout','description','autorest flags']
 
 def getFeatures(version):
         if(version>40000):

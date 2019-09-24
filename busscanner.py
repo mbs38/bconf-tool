@@ -40,7 +40,10 @@ try:
 				fw = client.read_holding_registers(10000,1,unit=x)
                                 fw = fw.registers[0]
 				version = 0
-                                if(fw>30000):
+                                if(fw>40000):
+		                        version=fw-40000
+		                        print("SPECIAL device. Custom HW and/or software!")
+                                elif(fw>30000):
 		                        version=fw-30000
 	                        elif(fw>20000):
 		                        version=fw-20000

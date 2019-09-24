@@ -33,7 +33,10 @@ global erg
 SwVersions = ['','reading out firmware version','','timer controlled outputs, default output states on startup','','','','','','brownout','description']
 
 def getFeatures(version):
-	if(version>30000):
+        if(version>40000):
+		version=version-40000
+		print("SPECIAL device. Custom HW and/or software!")
+        elif(version>30000):
 		version=version-30000
 		print("Device type is: Li")
 	elif(version>20000):
@@ -322,12 +325,12 @@ elif(args.command == "eeprom-download"):
 			abusliconf.longPushThr=cmdRegisters[1]
 			abusliconf.timeoutThr=cmdRegisters[2]
                         if erg >8:
-			        abusliconf.timeoutThr=cmdRegisters[3]
+			        abusliconf.brownoutThr=cmdRegisters[3]
 			abusliconf.timervals=timeoutvalsFromDevice
 			abusliconf.outDefaults=outDefaultsFromDevice
                         if erg > 9:
                                 abusliconf.description=description
-                        abusliconf.brownoutThr=brownoutThr
+                        #abusliconf.brownoutThr=brownoutThr
 			abusliconf.writeConfToFile()
 			print ("Writing to file: "+abusliconf.filename)
 			if(compare()):

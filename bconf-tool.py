@@ -28,9 +28,10 @@ timerOConfFromDevice = [False]*32
 cmdRegisters = [0]*5
 timeoutvalsFromDevice = [0]*16
 outDefaultsFromDevice = [False]*16
+patternSavingFromDevice = [False]*16
 description = ""
 global erg
-SwVersions = ['','reading out firmware version','','timer controlled outputs, default output states on startup','','','','','','brownout','description','autorest flags']
+SwVersions = ['','reading out firmware version','','timer controlled outputs, default output states on startup','','','','','','brownout','description','autorest flags','group all on instead of pattern saving possible']
 
 def getFeatures(version):
         if(version>40000):
@@ -101,6 +102,11 @@ def readConfs():
 		result1 = client.read_coils(2512,512,unit=unit)
 		result2 = client.read_coils(3024,32,unit=unit)
 		result3 = client.read_coils(3056,16,unit=unit)
+                if erg>11:
+                    result4 = client.read_coils(3072,16,unit=unit)
+		    for x in range(0, 16):
+		        patternSavingFromDevice[x]=result4.bits[x]
+
                 if erg < 9:
                     result4 = client.read_holding_registers(2000,3,unit=unit)
                 else:

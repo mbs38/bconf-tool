@@ -197,8 +197,6 @@ def compare():
 			print("output default states don't match!")
 			testResult=1
         if(erg>9):
-                print(repr(abusliconf.description))
-                print(repr(description))
                 if(repr(abusliconf.description)==repr(description)):
 		        print("description matches. "+"("+description+")")
 	        else:

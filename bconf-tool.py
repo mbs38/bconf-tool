@@ -293,7 +293,7 @@ if (args.command == "download"):
 		abusliconf.buttonConf=buttonConf
 		abusliconf.ioConf=IOcffromDevice
 		abusliconf.oConf=oConfFromDevice
-		abusliconf.timerOCont=timerOConfFromDevice
+		abusliconf.timerOConf=timerOConfFromDevice
 		abusliconf.longPushThr=cmdRegisters[1]
 		abusliconf.timeoutThr=cmdRegisters[2]
                 if erg > 8: 
@@ -327,7 +327,7 @@ elif(args.command == "eeprom-download"):
 			abusliconf.buttonConf=buttonConf
 			abusliconf.ioConf=IOcffromDevice
 			abusliconf.oConf=oConfFromDevice
-			abusliconf.timerOCont=timerOConfFromDevice
+			abusliconf.timerOConf=timerOConfFromDevice
 			abusliconf.longPushThr=cmdRegisters[1]
 			abusliconf.timeoutThr=cmdRegisters[2]
                         if erg >8:

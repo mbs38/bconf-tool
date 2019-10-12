@@ -203,8 +203,6 @@ def compare():
 			print("output default states don't match!")
 			testResult=1
         if(erg>9):
-                print(repr(abusliconf.description))
-                print(repr(description))
                 if(repr(abusliconf.description)==repr(description)):
 		        print("description matches. "+"("+description+")")
 	        else:
@@ -247,7 +245,6 @@ def upload():
             print("ERROR! Description in config file too long! Maximum is 16 characters!")
             exit()
 
-	print("Uploading. Please wait, this might take a couple of seconds..")
 	
         client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
         try:

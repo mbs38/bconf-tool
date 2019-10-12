@@ -147,7 +147,6 @@ def readConfs():
 
 def compare():
 
-	print("Downloading from device "+str(unit))
 	readConfs()
 	abusliconf.readConfFromFile()
         if len(abusliconf.description)>16:
@@ -156,55 +155,55 @@ def compare():
 
 	testResult = 0
 	if(IOcffromDevice==abusliconf.ioConf):
-		print("input-output-assignments match.")
+		pass#print("input-output-assignments match.")
 	else:
 		testResult=1
 		print("input-output-assignments dont match!")
 	if(buttonConf==abusliconf.buttonConf):
-		print("button configuration matches")
+		pass#print("button configuration matches")
 	else:	
 		testResult=1
 		print("button configuration doesn't match!")
 	if(oConfFromDevice==abusliconf.oConf):
-		print("output configuration matches.")
+		pass#print("output configuration matches.")
 	else:
 		testResult=1
 		print("output configuration doesn't match!")
 	if(abusliconf.longPushThr==cmdRegisters[1]):
-		print("longpush threshold matches. "+"("+str(cmdRegisters[1])+")")
+		pass#print("longpush threshold matches. "+"("+str(cmdRegisters[1])+")")
 	else:
 		testResult=1
 		print("longpush threshold doesn't match!")
 	if(abusliconf.timeoutThr==cmdRegisters[2]):
-		print("bus timeout threshold matches. "+"("+str(cmdRegisters[2])+")")
+		pass#print("bus timeout threshold matches. "+"("+str(cmdRegisters[2])+")")
 	else:
 		print("bus timeout threshold doesn't match!")
 		testResult=1
         if erg > 8:
                 if(abusliconf.brownoutThr==cmdRegisters[3]):
-	    	        print("brownout threshold matches. "+"("+str(cmdRegisters[3])+")")
+	    	        pass#print("brownout threshold matches. "+"("+str(cmdRegisters[3])+")")
 	        else:
 	                print("brownout threshold doesn't match!")
 		        testResult=1
         if(erg>2):
 		if(timerOConfFromDevice==abusliconf.timerOConf):
-			print("timer output configuration matches.")
+			pass#print("timer output configuration matches.")
 		else:
 			testResult=1
 			print("timer output configuration doesn't match!")
 		if(abusliconf.timervals==timeoutvalsFromDevice):
-			print("output timeout values match.")
+			pass#print("output timeout values match.")
 		else:
 			print("output timeout values doesn't match!")
 			testResult=1
 		if(outDefaultsFromDevice==abusliconf.outDefaults):
-			print("output default states match.")
+			pass#print("output default states match.")
 		else:
 			print("output default states don't match!")
 			testResult=1
         if(erg>9):
                 if(repr(abusliconf.description)==repr(description)):
-		        print("description matches. "+"("+description+")")
+                    print("Description: "+"("+description+")")
 	        else:
 		        print("description doesn't match!")
 		        testResult=1       

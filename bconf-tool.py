@@ -2,14 +2,14 @@
 
 import abusliconf
 import array
-import pymodbus
 import serial
 import argparse
 import time
-from pymodbus.pdu import ModbusRequest
-from pymodbus.client.sync import ModbusSerialClient as ModbusClient #initialize a serial RTU client instance
-from pymodbus.transaction import ModbusRtuFramer
 
+from pymodbus.pdu import ModbusRequest
+from pymodbus.client.sync import ModbusSerialClient as SerialModbusClient
+from pymodbus.client.sync import ModbusTcpClient as TCPModbusClient
+from pymodbus.transaction import ModbusRtuFramer
 #import logging
 #logging.basicConfig()
 ##log = logging.getLogger()
@@ -62,7 +62,7 @@ def getFeatures(version):
 
 def probe():
 	try:
-		client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
+		client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
 		connection = client.connect()
 		result0 = client.read_coils(2000,1,unit=unit)
 		client.close()
@@ -82,7 +82,7 @@ def probe():
 			return False
 
 def getFwVersion():
-	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout = 0.5)
+	client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout = 0.5)
 	try:
 		result = client.read_holding_registers(10000,1,unit=unit)
 		vers=int(result.registers[0])
@@ -95,7 +95,7 @@ def getFwVersion():
 		return vers
 
 def readConfs():
-	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout = 0.5)
+	client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout = 0.5)
 	try:
 		connection = client.connect()
 		result0 = client.read_coils(2000,512,unit=unit)
@@ -219,7 +219,7 @@ def compare():
 		return True
 
 def store():
-	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate)
+	client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate)
 	try:
 		connection = client.connect()
 		result4 = client.write_register(2000,17239,unit=unit)
@@ -230,7 +230,7 @@ def store():
 
 def loadEEPROMcontent():
 	print("Trying to load config from EEPROM.")
-	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate)
+	client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate)
 	try:
 		connection = client.connect()
 		result4 = client.write_register(2000,17234,unit=unit)
@@ -249,16 +249,15 @@ def upload():
 
 	print("Uploading. Please wait, this might take a couple of seconds..")
 	
-        client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
+        client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
         try:
-		
 		connection = client.connect()
 		result0 = client.write_coils(2000,abusliconf.ioConf[0:512],unit=unit)
 		result0 = client.write_coils(2512,abusliconf.ioConf[512:1024],unit=unit)
 		result2 = client.write_coils(3024,abusliconf.oConf,unit=unit)
 		if(erg>2):
 			result5 = client.write_coils(3072,abusliconf.timerOConf,unit=unit)
-			result7 = client.write_coils(3104,abusliconf.outDefaults, unit=unit)
+                        result7 = client.write_coils(3104,abusliconf.outDefaults, unit=unit)
 			result6 = client.write_registers(4000,abusliconf.timervals,unit=unit)
 		result3 = client.write_coils(3056,abusliconf.buttonConf,unit=unit)
 		result4 = client.write_register(2001,abusliconf.longPushThr,unit=unit)

@@ -32,7 +32,7 @@ patternSavingFromDeviceShortPush = [False]*16
 patternSavingFromDeviceLongPush = [False]*16
 description = ""
 global erg
-SwVersions = ['','reading out firmware version','','timer controlled outputs, default output states on startup','','','','','','brownout','description','autorest flags','group all on instead of pattern saving possible']
+SwVersions = ['-','reading out firmware version','','timer controlled outputs, default output states on startup','-','-','-','-','-','brownout','description','autorest flags','support for 1TE device','group all on instead of pattern saving possible']
 
 def getFeatures(version):
         if(version>40000):

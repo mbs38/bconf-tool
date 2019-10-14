@@ -37,12 +37,16 @@ try:
 			sys.stdout.flush()
 			sys.stdout.write("Device found, address: "+str(x))
 			try:
-				fw = client.read_holding_registers(10000,1,unit=x)
+                                fw = client.read_holding_registers(10000,1,unit=x)
                                 fw = fw.registers[0]
 				version = 0
-                                if(fw>40000):
-		                        version=fw-40000
+                                if(fw>60000):
+                                        print("UNKNOWN DEVICE TYPE!")
+                                elif(fw>50000):
+		                        version=fw-50000
+                                elif(fw>40000):
 		                        print("SPECIAL device. Custom HW and/or software!")
+		                        version=fw-40000
                                 elif(fw>30000):
 		                        version=fw-30000
 	                        elif(fw>20000):
@@ -52,6 +56,10 @@ try:
 
                                     
                                 sys.stdout.write(", version-id: "+str(fw))
+				if(fw>50000 and fw<60000):
+					sys.stdout.write(", device type: 1TE")
+				if(fw>40000 and fw<50000):
+					sys.stdout.write(", device type: UNKNOWN!")
 				if(fw>30000 and fw<40000):
 					sys.stdout.write(", device type: Li")
 				if(fw>20000 and fw<30000):

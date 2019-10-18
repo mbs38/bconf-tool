@@ -35,7 +35,21 @@ global erg
 SwVersions = ['-','reading out firmware version','','timer controlled outputs, default output states on startup','-','-','-','-','-','brownout','description','autorest flags','support for 1TE device','group all on instead of pattern saving possible']
 
 def getFeatures(version):
-        if(version>40000):
+        if(version >= 60000): #device with fw version 15+ => "extended fw/hw identifiers"
+                try:
+		        result = client.read_holding_registers(10000,3,unit=unit)
+		        version=int(result.registers[1])
+                        devType=int(result.registers[2])
+		        print("Firmware-Version: "+str(vers))
+	        except:
+		        print("Cannot read extended fw/hw identifier.")
+		        version=0
+	        finally:
+		        client.close()
+        elif(version>50000 and version<60000):
+		print("Device type: 1TE")
+                version=version-50000
+        elif(version>40000):
 		version=version-40000
 		print("SPECIAL device. Custom HW and/or software!")
         elif(version>30000):
@@ -87,9 +101,8 @@ def getFwVersion():
 	try:
 		result = client.read_holding_registers(10000,1,unit=unit)
 		vers=int(result.registers[0])
-		print("Firmware-Version: "+str(vers))
 	except:
-		print("Cannot read FW-Version. Maybe legacy device?")
+		print("Cannot read FW-Version. Maybe legacy or incompatible device?")
 		vers=0
 	finally:
 		client.close()

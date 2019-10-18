@@ -33,14 +33,18 @@ patternSavingFromDeviceLongPush = [False]*16
 description = ""
 global erg
 SwVersions = ['-','reading out firmware version','','timer controlled outputs, default output states on startup','-','-','-','-','-','brownout','description','autorest flags','support for 1TE device','group all on instead of pattern saving possible']
+BoardTypes = ["unknown","agsBusLi","MonsterHW02","MonsterHW04","HutBasic","WBCv2","VariantWBCv2","AGSomat","HutVertical/1TE"]
 
 def getFeatures(version):
         if(version >= 60000): #device with fw version 15+ => "extended fw/hw identifiers"
+		client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
+                connection = client.connect()
                 try:
 		        result = client.read_holding_registers(10000,3,unit=unit)
 		        version=int(result.registers[1])
                         devType=int(result.registers[2])
-		        print("Firmware-Version: "+str(vers))
+		        print("Firmware-Version: "+str(version))
+                        print("Hardware/Board-Type: "+BoardTypes[devType])
 	        except:
 		        print("Cannot read extended fw/hw identifier.")
 		        version=0
@@ -65,7 +69,6 @@ def getFeatures(version):
 		else:
 			print("Unknown device!")
 			version=0
-	print("Software version: "+str(version))
 	if(version<(len(SwVersions)-1)):
 		print("/****************************************/")
 		print("LEGACY FIRMWARE! Update device's firmware!")

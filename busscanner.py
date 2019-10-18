@@ -18,6 +18,8 @@ parity = 'N'
 port = "/dev/ttyUSB0"
 failed = 0
 
+BoardTypes = ["unknown","agsBusLi","MonsterHW02","MonsterHW04","HutBasic","WBCv2","VariantWBCv2","AGSomat","HutVertical/1TE"]
+
 def dassert(deferred, callback):
     def _assertor(value):
         assert(value)
@@ -39,9 +41,15 @@ try:
 			try:
                                 fw = client.read_holding_registers(10000,1,unit=x)
                                 fw = fw.registers[0]
-				version = 0
-                                if(fw>60000):
-                                        print("UNKNOWN DEVICE TYPE!")
+                                if(fw >= 60000): #device with fw version 15+ => "extended fw/hw identifiers"
+                                        try:
+		                                result = client.read_holding_registers(10000,3,unit=x)
+		                                version=int(result.registers[1])
+                                                devType=int(result.registers[2])
+		                                sys.stdout.write(" Firmware-Version: "+str(version))
+                                                sys.stdout.write(" Hardware/Board-Type: "+BoardTypes[devType])
+	                                except:
+		                                sys.stdout.write(" Cannot read extended fw/hw identifier.")
                                 elif(fw>50000):
 		                        version=fw-50000
                                 elif(fw>40000):

@@ -1,4 +1,4 @@
-# Ugly code following!     
+# Ugly code following!
 
 import abusliconf
 import array
@@ -35,10 +35,14 @@ global erg
 SwVersions = ['-','reading out firmware version','','timer controlled outputs, default output states on startup','-','-','-','-','-','brownout','description','autorest flags','support for 1TE device','group all on instead of pattern saving possible','new firmware/hardware register layout']
 BoardTypes = ["unknown","agsBusLi","MonsterHW02","MonsterHW04","HutBasic","WBCv2","VariantWBCv2","AGSomat","HutVertical/1TE"]
 
+client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
+try:
+    connection = client.connect()
+except:
+    print("Cannot open serial port. Is "+port+" available?")
+
 def getFeatures(version):
         if(version >= 60000): #device with fw version 15+ => "extended fw/hw identifiers"
-		client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
-                connection = client.connect()
                 try:
 		        result = client.read_holding_registers(10000,3,unit=unit)
 		        version=int(result.registers[1])
@@ -80,8 +84,6 @@ def getFeatures(version):
 
 def probe():
 	try:
-		client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
-		connection = client.connect()
 		result0 = client.read_coils(2000,1,unit=unit)
 		client.close()
 	except:
@@ -100,7 +102,6 @@ def probe():
 			return False
 
 def getFwVersion():
-	client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout = 0.5)
 	try:
 		result = client.read_holding_registers(10000,1,unit=unit)
 		vers=int(result.registers[0])
@@ -112,9 +113,7 @@ def getFwVersion():
 		return vers
 
 def readConfs():
-	client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout = 0.5)
 	try:
-		connection = client.connect()
 		result0 = client.read_coils(2000,512,unit=unit)
 		result1 = client.read_coils(2512,512,unit=unit)
 		result2 = client.read_coils(3024,32,unit=unit)
@@ -130,7 +129,7 @@ def readConfs():
 		    result4 = client.read_holding_registers(2000,5,unit=unit)
                 if(erg > 2):
 			result5 = client.read_coils(3072,32,unit=unit)
-			result6 = client.read_holding_registers(4000,16,unit=unit)		
+			result6 = client.read_holding_registers(4000,16,unit=unit)
 			result7 = client.read_coils(3104,16,unit=unit)
 			for x in range(0, 32):
 				timerOConfFromDevice[x]=result5.bits[x]
@@ -178,7 +177,7 @@ def compare():
 		print("input-output-assignments dont match!")
 	if(buttonConf==abusliconf.buttonConf):
 		pass#print("button configuration matches")
-	else:	
+	else:
 		testResult=1
 		print("button configuration doesn't match!")
 	if(oConfFromDevice==abusliconf.oConf):
@@ -223,9 +222,9 @@ def compare():
                     print("Description: "+"("+description+")")
 	        else:
 		        print("description doesn't match!")
-		        testResult=1       
-        
-        
+		        testResult=1
+
+
         if testResult == 1:
 		print("ERROR: The device's configuration doesn't match the config file!")
 		return False
@@ -233,9 +232,7 @@ def compare():
 		return True
 
 def store():
-	client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate)
 	try:
-		connection = client.connect()
 		result4 = client.write_register(2000,17239,unit=unit)
 		print("Store: ok")
 	except:
@@ -244,9 +241,7 @@ def store():
 
 def loadEEPROMcontent():
 	print("Trying to load config from EEPROM.")
-	client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate)
 	try:
-		connection = client.connect()
 		result4 = client.write_register(2000,17234,unit=unit)
 		print("Loading from EEPROM initiated.")
 	except:
@@ -256,15 +251,13 @@ def loadEEPROMcontent():
 
 def upload():
 	abusliconf.readConfFromFile()
-	
+
         if len(abusliconf.description)>16:
             print("ERROR! Description in config file too long! Maximum is 16 characters!")
             exit()
 
-	
-        client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
+
         try:
-		connection = client.connect()
 		result0 = client.write_coils(2000,abusliconf.ioConf[0:512],unit=unit)
 		result0 = client.write_coils(2512,abusliconf.ioConf[512:1024],unit=unit)
 		result2 = client.write_coils(3024,abusliconf.oConf,unit=unit)
@@ -308,7 +301,7 @@ if (args.command == "download"):
 		abusliconf.timerOConf=timerOConfFromDevice
 		abusliconf.longPushThr=cmdRegisters[1]
 		abusliconf.timeoutThr=cmdRegisters[2]
-                if erg > 8: 
+                if erg > 8:
                         abusliconf.brownoutThr=cmdRegisters[3]
                 if erg > 9:
                         abusliconf.description=description
@@ -316,7 +309,7 @@ if (args.command == "download"):
 		abusliconf.outDefaults=outDefaultsFromDevice
 		abusliconf.writeConfToFile()
 		print ("Written to file: "+abusliconf.filename)
-	
+
 		if(compare()):
 			print("Verification: pass")
 
@@ -334,7 +327,7 @@ elif(args.command == "eeprom-download"):
 		if(question=='y'):
 			print("Okay.")
 			loadEEPROMcontent()
-			time.sleep(2)		
+			time.sleep(2)
 			readConfs()
 			abusliconf.buttonConf=buttonConf
 			abusliconf.ioConf=IOcffromDevice
@@ -359,11 +352,11 @@ elif(args.command == "eeprom-download"):
 elif (args.command == "upload"):
 		if probe():
 			erg=getFeatures(getFwVersion())
-			upload()				
+			upload()
 			print("Comparing.")
 			if(compare()):
 				print("Verification: pass")
-	
+
 
 elif (args.command == "store"):
 	if probe():
@@ -373,6 +366,6 @@ elif (args.command == "store"):
 			store()
 		else:
 			print("Cannot write to EEPROM!")
-		
+
 else:
 	print("Invalid command. Allowed commands: upload, download, store, compare, eeprom-download")

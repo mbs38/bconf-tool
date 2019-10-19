@@ -41,55 +41,56 @@ try:
 except:
     print("Cannot open serial port. Is "+port+" available?")
 
-def getFeatures(version):
-        if(version >= 60000): #device with fw version 15+ => "extended fw/hw identifiers"
-                try:
-		        result = client.read_holding_registers(10000,3,unit=unit)
-		        version=int(result.registers[1])
-                        devType=int(result.registers[2])
-		        print("Firmware-Version: "+str(version))
-                        print("Hardware/Board-Type: "+BoardTypes[devType])
-	        except:
-		        print("Cannot read extended fw/hw identifier.")
-		        version=0
-        elif(version>50000 and version<60000):
-		print("Device type: 1TE")
-                version=version-50000
-        elif(version>40000):
-		version=version-40000
-		print("SPECIAL device. Custom HW and/or software!")
-        elif(version>30000):
-		version=version-30000
-		print("Device type is: Li")
-	elif(version>20000):
-		version=version-20000
-		print("Device type is: Hut")
-	else:
-		if(version>10000):
-			version=version-10000
-			print("Device type is: wbcv2")
-		else:
-			print("Unknown device!")
-			version=0
-	if(version<(len(SwVersions)-1)):
-		print("/****************************************/")
-		print("LEGACY FIRMWARE! Update device's firmware!")
-		print("/****************************************/")
-		print("The following features won't be available:")
-		for x in range((version+1),len(SwVersions)):
-			print(" "+SwVersions[x])
-	return version
+def getFeatures():
+    version = getFwVersion()
+    if(version >= 60000): #device with fw version 15+ => "extended fw/hw identifiers"
+            try:
+                    result = client.read_holding_registers(10000,3,unit=unit)
+                    version=int(result.registers[1])
+                    devType=int(result.registers[2])
+                    print("Firmware-Version: "+str(version))
+                    print("Hardware/Board-Type: "+BoardTypes[devType])
+            except:
+                    print("Cannot read extended fw/hw identifier.")
+                    version=0
+    elif(version>50000 and version<60000):
+            print("Device type: 1TE")
+            version=version-50000
+    elif(version>40000):
+            version=version-40000
+            print("SPECIAL device. Custom HW and/or software!")
+    elif(version>30000):
+            version=version-30000
+            print("Device type is: Li")
+    elif(version>20000):
+            version=version-20000
+            print("Device type is: Hut")
+    else:
+            if(version>10000):
+                    version=version-10000
+                    print("Device type is: wbcv2")
+            else:
+                    print("Unknown device!")
+                    version=0
+    if(version<(len(SwVersions)-1)):
+            print("/****************************************/")
+            print("LEGACY FIRMWARE! Update device's firmware!")
+            print("/****************************************/")
+            print("The following features won't be available:")
+            for x in range((version+1),len(SwVersions)):
+                    print(" "+SwVersions[x])
+    return version
 
 def probe():
-	result0 = client.read_coils(2000,1,unit=unit)
-	try:
-		result0.string
-	except:
-		print("Client "+str(unit)+" available.")
-		return True
-	else:
-		print("Client "+str(unit)+" unreachable!")
-		return False
+    result0 = client.read_coils(2000,1,unit=unit)
+    try:
+            result0.string
+    except:
+            print("Client "+str(unit)+" available.")
+            return True
+    else:
+            print("Client "+str(unit)+" unreachable!")
+            return False
 
 def getFwVersion():
 	try:
@@ -102,15 +103,17 @@ def getFwVersion():
 		return vers
 
 def readConfs():
-	try:
+	if True:
 		result0 = client.read_coils(2000,512,unit=unit)
 		result1 = client.read_coils(2512,512,unit=unit)
 		result2 = client.read_coils(3024,32,unit=unit)
 		result3 = client.read_coils(3056,16,unit=unit)
                 if erg>11:
-                    result4 = client.read_coils(3072,16,unit=unit)
-		    for x in range(0, 16):
+                    result4 = client.read_coils(3120,32,unit=unit)
+                    for x in range(0, 16):
 		        patternSavingFromDeviceShortPush[x]=result4.bits[x]
+		    for x in range(0, 16):
+		        patternSavingFromDeviceLongPush[x]=result4.bits[x+16]
 
                 if erg < 9:
                     result4 = client.read_holding_registers(2000,3,unit=unit)
@@ -145,14 +148,14 @@ def readConfs():
 			buttonConf[x]=result3.bits[x]
 		for x in range(0, 32):
 			oConfFromDevice[x]=result2.bits[x]
-	except:
-		print("Modbus error.")
+	#except:
+	#	print("Modbus error.")
 	return erg
 
 def compare():
-
 	readConfs()
-	abusliconf.readConfFromFile()
+	print("Comparing.")
+        abusliconf.readConfFromFile()
         if len(abusliconf.description)>16:
                 print("ERROR! Description in config file too long! Maximum is 16 characters!")
                 client.close()
@@ -212,7 +215,11 @@ def compare():
 	        else:
 		        print("description doesn't match!")
 		        testResult=1
-
+        if erg > 11:
+                if patternSavingFromDeviceShortPush==abusliconf.patternSavingShort:
+                        pass
+                else:
+                        print("pattern saving (short push) control bits don't match")
 
         if testResult == 1:
 		print("ERROR: The device's configuration doesn't match the config file!")
@@ -266,7 +273,10 @@ def upload():
                                 if (x*2+1)<len(abusliconf.description):
                                         descrAsInts[x]=int(descrAsInts[x]|(ord(abusliconf.description[x*2+1])<<8))
                         result5 = client.write_registers(4016,descrAsInts,unit=unit)
-		print("Upload done.")
+	        if erg > 11:
+                        result5 = client.write_coils(3120,patternSavingFromDeviceShortPush,unit=unit)
+                        result5 = client.write_coils(3136,patternSavingFromDeviceLongPush,unit=unit)
+                print("Upload done.")
 	except:
 		print("Modbus error during upload.")
 
@@ -280,7 +290,7 @@ unit = args.address
 abusliconf.filename = args.file
 if (args.command == "download"):
 	if probe():
-		erg=getFeatures(getFwVersion())
+		erg=getFeatures()
 		readConfs()
 		abusliconf.buttonConf=buttonConf
 		abusliconf.ioConf=IOcffromDevice
@@ -303,13 +313,13 @@ if (args.command == "download"):
 
 elif (args.command == "compare"):
 	if probe():
-		erg=getFeatures(getFwVersion())
+		erg=getFeatures()
 		if compare():
 			print("Verification: pass")
 
 elif(args.command == "eeprom-download"):
 	if probe():
-		erg=getFeatures(getFwVersion())
+		erg=getFeatures()
 		question=str(raw_input('Warning! Configuration stored in RAM will be overwritten with EEPROM content. Continue? (y/n)'))
 		if(question=='y'):
 			print("Okay.")
@@ -338,9 +348,8 @@ elif(args.command == "eeprom-download"):
 
 elif (args.command == "upload"):
 		if probe():
-			erg=getFeatures(getFwVersion())
+			erg=getFeatures()
 			upload()
-			print("Comparing.")
 			if(compare()):
 				print("Verification: pass")
 

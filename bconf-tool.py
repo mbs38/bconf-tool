@@ -52,8 +52,6 @@ def getFeatures(version):
 	        except:
 		        print("Cannot read extended fw/hw identifier.")
 		        version=0
-	        finally:
-		        client.close()
         elif(version>50000 and version<60000):
 		print("Device type: 1TE")
                 version=version-50000
@@ -83,23 +81,15 @@ def getFeatures(version):
 	return version
 
 def probe():
+	result0 = client.read_coils(2000,1,unit=unit)
 	try:
-		result0 = client.read_coils(2000,1,unit=unit)
-		client.close()
+		result0.string
 	except:
-		print ("Serial error. Is "+port+" available?")
-		client.close()
+		print("Client "+str(unit)+" available.")
+		return True
 	else:
-		try:
-			result0.string
-		except:
-			client.close()
-			print("Client "+str(unit)+" available.")
-			return True
-		else:
-			client.close()
-			print("Client "+str(unit)+" unreachable!")
-			return False
+		print("Client "+str(unit)+" unreachable!")
+		return False
 
 def getFwVersion():
 	try:
@@ -109,7 +99,6 @@ def getFwVersion():
 		print("Cannot read FW-Version. Maybe legacy or incompatible device?")
 		vers=0
 	finally:
-		client.close()
 		return vers
 
 def readConfs():
@@ -158,7 +147,6 @@ def readConfs():
 			oConfFromDevice[x]=result2.bits[x]
 	except:
 		print("Modbus error.")
-	client.close()
 	return erg
 
 def compare():
@@ -167,6 +155,7 @@ def compare():
 	abusliconf.readConfFromFile()
         if len(abusliconf.description)>16:
                 print("ERROR! Description in config file too long! Maximum is 16 characters!")
+                client.close()
                 exit()
 
 	testResult = 0
@@ -237,7 +226,6 @@ def store():
 		print("Store: ok")
 	except:
 		print("Modbus error. Store failed.")
-	client.close()
 
 def loadEEPROMcontent():
 	print("Trying to load config from EEPROM.")
@@ -246,7 +234,6 @@ def loadEEPROMcontent():
 		print("Loading from EEPROM initiated.")
 	except:
 		print("Modbus error. Loading from EEPROM failed.")
-	client.close()
 
 
 def upload():
@@ -254,6 +241,7 @@ def upload():
 
         if len(abusliconf.description)>16:
             print("ERROR! Description in config file too long! Maximum is 16 characters!")
+            client.close()
             exit()
 
 
@@ -281,7 +269,6 @@ def upload():
 		print("Upload done.")
 	except:
 		print("Modbus error during upload.")
-	client.close()
 
 parser = argparse.ArgumentParser()
 
@@ -369,3 +356,5 @@ elif (args.command == "store"):
 
 else:
 	print("Invalid command. Allowed commands: upload, download, store, compare, eeprom-download")
+
+client.close()

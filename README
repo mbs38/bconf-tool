@@ -1,23 +1,49 @@
-Config file syntax:
+[Global]
+timeout = 0
+# bus timeout value in seconds 
+long-push-threshold = 30
+# amount of time a button has to be pressed unitl a long push is recognized (1/10 s) 
+brownout-threshold = 0
+# supply voltage below which the outputs will be switched off (in mV)
+description = none
+# max. 16 ASCII characters
 
-######## Example 1
-[Input1]
+[Input0]
 short-on = 4
-short-off = 4 
-#Meaning: toggle Output4 when the button connected to Input1 is pressed
+short-off = 4
+# toggle output 4 if button at input 0 is pressed for a short time 
+long-on = 
+long-off = 0,1,2,3,4
+# switch off outputs 0,1,2,3 and 4 if button at input 0 is pressed for a long time
+switch-type = push-button
+# switch-type can either bei push-botton or toggle-switch. A state change of a toggle switch is interpreted as a short button press. Of course there is no long button press then..
+pattern-saving-shortpush = off
+pattern-saving-longpush = off
 
-######## Example 2
 [Input1]
-short-on = 4 
-#Meaning: switch on Output4 when the button connected to Input1 is pressed
+short-on = 0,1,2
+short-off = 0,1,2
+long-on = 
+long-off = 
+switch-type = push-button
+pattern-saving-shortpush = on
+# if pattern saving is on, 
+pattern-saving-longpush = off
 
+[Output0]
+input-controlled = never
+# can either be always, timeout-only or never
+timer-controlled = never
+# can either be always, timeout-only or never
+timeout-value = 0
+# time after which the output will be turned off (seconds). only works if value is greater 0 and
+# timer-controlled is not set to never
+default-state = off
+# state the output assumes after system startup
 
-######## Example 3
-[Input1]
-short-off = 4 
-#Meaning: switch off Output4 when the button connected to Input1 is pressed
+[Output1]
+input-controlled = always
+timer-controlled = never
+timeout-value = 0
+default-state = off
 
-######## Example 4
-[Input1]
-long-on = 4
-#Meaning: switch on Output4 when the button connected to Input1 is pressed for $time 

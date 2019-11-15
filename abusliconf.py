@@ -46,6 +46,8 @@ timeoutThr=0
 brownoutThr=0
 description="none"
 outDefaults=[False]*16
+patternSavingShort=[False]*16
+patternSavingLong=[False]*16
 
 def readConfFromFile():
 	global filename
@@ -106,8 +108,19 @@ def readConfFromFile():
 			switchType = config.get(sections, 'switch-type')
 		except:
 			switchType = "push-button"
+                try:
+                        if(config.get(sections, 'pattern-saving-shortpush')=='on'):
+                                patternSavingShort[sectionList.index(sections)]=True
+                except:
+                        patternSavingShort[sectionList.index(sections)]=False
 
-		########################### Arrange data, copy into boolean list ###############################
+                try:
+                        if(config.get(sections, 'pattern-saving-longpush')=='on'):
+                                patternSavingLong[sectionList.index(sections)]=True
+                except:
+                        patternSavingLong[sectionList.index(sections)]=False
+		
+                ########################### Arrange data, copy into boolean list ###############################
 		if sectionList.index(sections)>7:
 			skip = 512
 			multiplier=(sectionList.index(sections)-8)*8
@@ -223,6 +236,8 @@ def writeConfToFile():
 		configwriter.set(section, 'long-on','')
 		configwriter.set(section, 'long-off','')
 		configwriter.set(section, 'switch-type', 'push-button')
+                configwriter.set(section, 'pattern-saving-shortpush', 'off')
+                configwriter.set(section, 'pattern-saving-longpush', 'off')
 	for outputsection in outputList:
 		try:
 			configwriter.add_section(outputsection)
@@ -234,7 +249,6 @@ def writeConfToFile():
 		configwriter.set(outputsection, 'default-state', 'off')
 
 ####################### prepare lists for config file #####################################
-
 	for x in range(0,16):
 		if(buttonConf[x]==True):
 			configwriter.set(sectionList[x], 'switch-type', 'toggle-switch')

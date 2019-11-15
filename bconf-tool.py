@@ -356,7 +356,7 @@ elif (args.command == "upload"):
 
 elif (args.command == "store"):
 	if probe():
-		erg=getFeatures(getFwVersion())
+		erg=getFeatures()
 		if(compare()):
 			print("Verification: pass")
 			store()

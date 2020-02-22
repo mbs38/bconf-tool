@@ -18,7 +18,7 @@ parity = 'N'
 port = "/dev/ttyUSB0"
 failed = 0
 
-BoardTypes = ["unknown","agsBusLi","MonsterHW02","MonsterHW04","HutBasic","WBCv2","VariantWBCv2","AGSomat","HutVertical/1TE"]
+BoardTypes = ["unknown","agsBusLi","MonsterHW02","MonsterHW04","HutBasic","WBCv2","VariantWBCv2","AGSomat","HutVertical/1TE","5 channel LED PWM Dimmer"]
 
 def dassert(deferred, callback):
     def _assertor(value):

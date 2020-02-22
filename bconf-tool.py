@@ -33,7 +33,7 @@ patternSavingFromDeviceLongPush = [False]*16
 description = ""
 global erg
 SwVersions = ['-','reading out firmware version','','timer controlled outputs, default output states on startup','-','-','-','-','-','brownout','description','autorest flags','support for 1TE device','group all on instead of pattern saving possible','new firmware/hardware register layout']
-BoardTypes = ["unknown","agsBusLi","MonsterHW02","MonsterHW04","HutBasic","WBCv2","VariantWBCv2","AGSomat","HutVertical/1TE"]
+BoardTypes = ["unknown","agsBusLi","MonsterHW02","MonsterHW04","HutBasic","WBCv2","VariantWBCv2","AGSomat","HutVertical/1TE","5 channel LED PWM Dimmer"]
 
 client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
 try:

@@ -115,9 +115,9 @@ def readConfs():
             patternSavingFromDeviceLongPush[x]=result4.bits[x+16]
 
     if erg < 9:
-        result4 = client.read_holding_registers(2000,3,unit=unit)
+        result8 = client.read_holding_registers(2000,3,unit=unit)
     else:
-        result4 = client.read_holding_registers(2000,5,unit=unit)
+        result8 = client.read_holding_registers(2000,5,unit=unit)
     if(erg > 2):
     	result5 = client.read_coils(3072,32,unit=unit)
     	result6 = client.read_holding_registers(4000,16,unit=unit)
@@ -136,10 +136,10 @@ def readConfs():
             description=description+str(chr(resultDescr.registers[x] & 0xFF))
             description=description+str(chr((resultDescr.registers[x] & 0xFF00)>>8))
         description=description.rstrip(chr(0x00))
-    cmdRegisters[1]=int(result4.registers[1])
-    cmdRegisters[2]=int(result4.registers[2])
+    cmdRegisters[1]=int(result8.registers[1])
+    cmdRegisters[2]=int(result8.registers[2])
     if erg > 8:
-        cmdRegisters[3]=int(result4.registers[3])
+        cmdRegisters[3]=int(result8.registers[3])
     for x in range(0, 512):
     	IOcffromDevice[x] = result0.bits[x]
     	IOcffromDevice[x+512] = result1.bits[x]

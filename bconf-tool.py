@@ -274,8 +274,8 @@ def upload():
                     descrAsInts[x]=int(descrAsInts[x]|(ord(abusliconf.description[x*2+1])<<8))
             result5 = client.write_registers(4016,descrAsInts,unit=unit)
         if erg > 11:
-            result5 = client.write_coils(3120,abusliconf.patternSavingFromDeviceShort,unit=unit)
-            result5 = client.write_coils(3136,abusliconf.patternSavingFromDeviceLong,unit=unit)
+            result5 = client.write_coils(3120,abusliconf.patternSavingShor,unit=unit)
+            result5 = client.write_coils(3136,abusliconf.patternSavingLong,unit=unit)
         print("Upload done.")
     except:
     	print("Modbus error during upload.")

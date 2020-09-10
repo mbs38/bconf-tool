@@ -252,8 +252,14 @@ def writeConfToFile():
 	for x in range(0,16):
 		if(buttonConf[x]==True):
 			configwriter.set(sectionList[x], 'switch-type', 'toggle-switch')
-		
+	
+        for x in range(0,16):
+                if(patternSavingShort[x]==True):
+                        configwriter.set(sectionList[x], 'pattern-saving-shortpush', 'on')
 			
+        for x in range(0,16):
+                if(patternSavingLong[x]==True):
+                        configwriter.set(sectionList[x], 'pattern-saving-longpush', 'on')
 	
 	for section in sectionList:
 		shortOn = []

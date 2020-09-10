@@ -35,7 +35,7 @@ global erg
 SwVersions = ['-','reading out firmware version','','timer controlled outputs, default output states on startup','-','-','-','-','-','brownout','description','autorest flags','support for 1TE device','group all on instead of pattern saving possible','new firmware/hardware register layout']
 BoardTypes = ["unknown","agsBusLi","MonsterHW02","MonsterHW04","HutBasic","WBCv2","VariantWBCv2","AGSomat","HutVertical/1TE","5 channel LED PWM Dimmer"]
 
-client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
+client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=1.0)
 try:
     connection = client.connect()
 except:
@@ -217,6 +217,11 @@ def compare():
             pass
         else:
             print("pattern saving (short push) control bits don't match")
+        if patternSavingFromDeviceLongPush==abusliconf.patternSavingLong:
+            pass
+        else:
+            print("pattern saving (long push) control bits don't match")
+
     
     if testResult == 1:
         print("ERROR: The device's configuration doesn't match the config file!")
@@ -269,8 +274,8 @@ def upload():
                     descrAsInts[x]=int(descrAsInts[x]|(ord(abusliconf.description[x*2+1])<<8))
             result5 = client.write_registers(4016,descrAsInts,unit=unit)
         if erg > 11:
-            result5 = client.write_coils(3120,patternSavingFromDeviceShortPush,unit=unit)
-            result5 = client.write_coils(3136,patternSavingFromDeviceLongPush,unit=unit)
+            result5 = client.write_coils(3120,abusliconf.patternSavingFromDeviceShort,unit=unit)
+            result5 = client.write_coils(3136,abusliconf.patternSavingFromDeviceLong,unit=unit)
         print("Upload done.")
     except:
     	print("Modbus error during upload.")

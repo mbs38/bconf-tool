@@ -217,9 +217,11 @@ def compare():
             pass
         else:
             print("pattern saving (short push) control bits don't match")
+            testResult=1
         if patternSavingFromDeviceLongPush==abusliconf.patternSavingLong:
             pass
         else:
+            testResult=1
             print("pattern saving (long push) control bits don't match")
 
     
@@ -298,6 +300,8 @@ if (args.command == "download"):
     abusliconf.timerOConf=timerOConfFromDevice
     abusliconf.longPushThr=cmdRegisters[1]
     abusliconf.timeoutThr=cmdRegisters[2]
+    abusliconf.patternSavingLong=patternSavingFromDeviceShortPush
+    abusliconf.patternSavingShort=patternSavingFromDeviceLongPush
     if erg > 8:
         abusliconf.brownoutThr=cmdRegisters[3]
     if erg > 9:

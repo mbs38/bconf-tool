@@ -81,8 +81,21 @@ try:
                                                 description=description+str(chr(resultDescr.registers[x] & 0xFF))
                                                 description=description+str(chr((resultDescr.registers[x] & 0xFF00)>>8))
                                                 description=description.rstrip(chr(0x00))
-   
-					sys.stdout.write(", Description: "+description)
+                                        if len(description)>0:
+					        sys.stdout.write(", Description: "+description+" ")
+
+                                if version>19:
+                                        
+		                        result = client.read_holding_registers(10003,3,unit=57)
+                                        
+		                        year=int(result.registers[0])>>8
+                                        month=int(result.registers[0])&0x00FF
+                                        day=int(result.registers[1])>>8
+                                        hour=int(result.registers[1])&0x00FF
+		                        minutes=int(result.registers[2])>>8
+                                        seconds=int(result.registers[2])&0x00FF
+                                        #
+                                        sys.stdout.write(" Buildtime: "+str(day)+"."+str(month)+"."+str(year)+" "+str(hour)+":"+str(minutes)+":"+str(seconds))
 				sys.stdout.write("\n")
 			except:
 				sys.stdout.write("\n")

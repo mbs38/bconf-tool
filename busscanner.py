@@ -68,7 +68,9 @@ try:
                     description=description+str(chr((resultDescr.registers[y] & 0xFF00)>>8))
                     description=description.rstrip(chr(0x00))
                 if len(description)>0:
-                    sys.stdout.write(", Description: "+description+" ")
+                    sys.stdout.write(", Description: \""+description+"\"")
+                systime = client.read_holding_registers(48,4,unit=x)
+                sys.stdout.write(", System-Time: "+str(systime.registers[0])+" days "+str(systime.registers[1])+":"+str(systime.registers[2])+":"+str(systime.registers[3]))
             if version>19:
                 result = client.read_holding_registers(10003,3,unit=x)
                 year=int(result.registers[0])>>8
@@ -77,7 +79,7 @@ try:
                 hour=int(result.registers[1])&0x00FF
                 minutes=int(result.registers[2])>>8
                 seconds=int(result.registers[2])&0x00FF
-                sys.stdout.write(" Buildtime: "+str(day)+"."+str(month)+"."+str(year)+" "+str(hour)+":"+str(minutes)+":"+str(seconds))
+                sys.stdout.write(", Buildtime: "+str(day)+"."+str(month)+"."+str(year)+" "+str(hour)+":"+str(minutes)+":"+str(seconds))
                 sys.stdout.write("\n")
         except:
             sys.stdout.write("\n")

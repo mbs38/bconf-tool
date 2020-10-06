@@ -80,7 +80,7 @@ try:
                 minutes=int(result.registers[2])>>8
                 seconds=int(result.registers[2])&0x00FF
                 sys.stdout.write(", Buildtime: "+str(day)+"."+str(month)+"."+str(year)+" "+str(hour)+":"+str(minutes)+":"+str(seconds))
-                sys.stdout.write("\n")
+            sys.stdout.write("\n")
         except:
             sys.stdout.write("\n")
         sys.stdout.flush()

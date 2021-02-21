@@ -48,6 +48,7 @@ description="none"
 outDefaults=[False]*16
 patternSavingShort=[False]*16
 patternSavingLong=[False]*16
+debouncetime=0
 
 def readConfFromFile():
 	global filename
@@ -55,6 +56,7 @@ def readConfFromFile():
 	global longPushThr
         global brownoutThr
         global description
+        global debouncetime
 	config.read(filename)
 	try:
 		#global longPushThr
@@ -64,6 +66,15 @@ def readConfFromFile():
 		#global longPushThr
 		longPushThr = 30
 		#print("no long push threshold in config file")
+        try:
+		#global longPushThr
+		debouncetime = int(config.get('Global', 'debounce-time'))
+		#print("Long-push-thr: "+str(longPushThr))
+	except:
+		#global longPushThr
+		debouncetime = 25
+		#print("no long push threshold in config file")
+
 	try:	
 	#	global timeoutThr
 		timeoutThr = int(config.get('Global', 'timeout'))
@@ -223,6 +234,7 @@ def writeConfToFile():
 	configwriter.add_section('Global')
 	configwriter.set('Global', 'timeout', timeoutThr)
 	configwriter.set('Global', 'long-push-threshold', longPushThr)
+	configwriter.set('Global', 'debounce-time', debouncetime)
 	configwriter.set('Global', 'brownout-threshold', brownoutThr)
 	configwriter.set('Global', 'description', description)
 	for section in sectionList:

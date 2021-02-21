@@ -31,8 +31,9 @@ outDefaultsFromDevice = [False]*16
 patternSavingFromDeviceShortPush = [False]*16
 patternSavingFromDeviceLongPush = [False]*16
 description = ""
-global erg
-SwVersions = ['-','reading out firmware version','','timer controlled outputs, default output states on startup','-','-','-','-','-','brownout','description','autorest flags','support for 1TE device','group all on instead of pattern saving possible','new firmware/hardware register layout','-','-','fix debounce for noisy envrironments','-','-','Uptime now in input registers 0 to 3']
+debouncetimeFromDevice = 0
+global version
+SwVersions = ['-','reading out firmware version','','timer controlled outputs, default output states on startup','-','-','-','-','-','brownout','description','autorest flags','support for 1TE device','group all on instead of pattern saving possible','new firmware/hardware register layout','-','-','fix debounce for noisy envrironments','-','-','Uptime now in input registers 0 to 3','debounce time now configurable using bconf tool']
 BoardTypes = ["unknown","agsBusLi","MonsterHW02","MonsterHW04","HutBasic","WBCv2","VariantWBCv2","AGSomat","HutVertical/1TE","5 channel LED PWM Dimmer","WBCv2 with Atmega328PB"]
 client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=1.0)
 try:
@@ -119,18 +120,18 @@ def readConfs():
     result1 = client.read_coils(2512,512,unit=unit)
     result2 = client.read_coils(3024,32,unit=unit)
     result3 = client.read_coils(3056,16,unit=unit)
-    if erg>11:
+    if version>11:
         result4 = client.read_coils(3120,32,unit=unit)
         for x in range(0, 16):
             patternSavingFromDeviceShortPush[x]=result4.bits[x]
         for x in range(0, 16):
             patternSavingFromDeviceLongPush[x]=result4.bits[x+16]
 
-    if erg < 9:
+    if version < 9:
         result8 = client.read_holding_registers(2000,3,unit=unit)
     else:
         result8 = client.read_holding_registers(2000,5,unit=unit)
-    if(erg > 2):
+    if(version > 2):
     	result5 = client.read_coils(3072,32,unit=unit)
     	result6 = client.read_holding_registers(4000,16,unit=unit)
     	result7 = client.read_coils(3104,16,unit=unit)
@@ -140,7 +141,7 @@ def readConfs():
     		timeoutvalsFromDevice[x]=int(result6.registers[x])
     	for x in range(0, 16):
     		outDefaultsFromDevice[x]=result7.bits[x]
-    if erg > 9:
+    if version > 9:
         resultDescr = client.read_holding_registers(4016,8,unit=unit)
         global description
         description=""
@@ -150,7 +151,7 @@ def readConfs():
         description=description.rstrip(chr(0x00))
     cmdRegisters[1]=int(result8.registers[1])
     cmdRegisters[2]=int(result8.registers[2])
-    if erg > 8:
+    if version > 8:
         cmdRegisters[3]=int(result8.registers[3])
     for x in range(0, 512):
     	IOcffromDevice[x] = result0.bits[x]
@@ -159,7 +160,10 @@ def readConfs():
     	buttonConf[x]=result3.bits[x]
     for x in range(0, 32):
     	oConfFromDevice[x]=result2.bits[x]
-    return erg
+
+    if version > 21:
+        global debouncetimeFromDevice
+        debouncetimeFromDevice = int(client.read_holding_registers(4024,1,unit=unit).registers[0])
 
 def compare():
     readConfs()
@@ -196,13 +200,13 @@ def compare():
     else:
         print("bus timeout threshold doesn't match!")
         testResult=1
-    if erg > 8:
+    if version > 8:
         if(abusliconf.brownoutThr==cmdRegisters[3]):
             pass#print("brownout threshold matches. "+"("+str(cmdRegisters[3])+")")
         else:
             print("brownout threshold doesn't match!")
             testResult=1
-    if(erg>2):
+    if(version>2):
         if(timerOConfFromDevice==abusliconf.timerOConf):
             pass#print("timer output configuration matches.")
         else:
@@ -218,13 +222,13 @@ def compare():
         else:
             print("output default states don't match!")
             testResult=1
-    if(erg>9):
+    if(version>9):
         if(repr(abusliconf.description)==repr(description)):
             print("Description: "+"("+description+")")
         else:
     	    print("description doesn't match!")
     	    testResult=1
-    if erg > 11:
+    if version > 11:
         if patternSavingFromDeviceShortPush==abusliconf.patternSavingShort:
             pass
         else:
@@ -235,7 +239,13 @@ def compare():
         else:
             testResult=1
             print("pattern saving (long push) control bits don't match")
-
+   
+    if version > 21:
+        if debouncetimeFromDevice==abusliconf.debouncetime:
+            pass
+        else:
+            testResult=1
+            print("debounce time does not match")
     
     if testResult == 1:
         print("ERROR: The device's configuration doesn't match the config file!")
@@ -270,16 +280,16 @@ def upload():
         result0 = client.write_coils(2000,abusliconf.ioConf[0:512],unit=unit)
         result0 = client.write_coils(2512,abusliconf.ioConf[512:1024],unit=unit)
         result2 = client.write_coils(3024,abusliconf.oConf,unit=unit)
-        if(erg>2):
+        if(version>2):
             result5 = client.write_coils(3072,abusliconf.timerOConf,unit=unit)
             result7 = client.write_coils(3104,abusliconf.outDefaults, unit=unit)
             result6 = client.write_registers(4000,abusliconf.timervals,unit=unit)
         result3 = client.write_coils(3056,abusliconf.buttonConf,unit=unit)
         result4 = client.write_register(2001,abusliconf.longPushThr,unit=unit)
         result4 = client.write_register(2002,abusliconf.timeoutThr,unit=unit)
-        if erg > 8:
+        if version > 8:
             result4 = client.write_register(2003,abusliconf.brownoutThr,unit=unit)
-        if erg > 9:
+        if version > 9:
             descrAsInts = [0]*8
             for x in range(0, 8):
                 if (x*2)<len(abusliconf.description):
@@ -287,9 +297,11 @@ def upload():
                 if (x*2+1)<len(abusliconf.description):
                     descrAsInts[x]=int(descrAsInts[x]|(ord(abusliconf.description[x*2+1])<<8))
             result5 = client.write_registers(4016,descrAsInts,unit=unit)
-        if erg > 11:
+        if version > 11:
             result5 = client.write_coils(3120,abusliconf.patternSavingShort,unit=unit)
             result5 = client.write_coils(3136,abusliconf.patternSavingLong,unit=unit)
+        if version > 21:
+            result5 = client.write_register(4024,abusliconf.debouncetime,unit=unit)
         print("Upload done.")
     except:
     	print("Modbus error during upload.")
@@ -304,7 +316,7 @@ unit = args.address
 abusliconf.filename = args.file
 if (args.command == "download"):
     if probe():
-        erg=getFeatures()
+        version=getFeatures()
         readConfs()
     abusliconf.buttonConf=buttonConf
     abusliconf.ioConf=IOcffromDevice
@@ -314,12 +326,16 @@ if (args.command == "download"):
     abusliconf.timeoutThr=cmdRegisters[2]
     abusliconf.patternSavingLong=patternSavingFromDeviceShortPush
     abusliconf.patternSavingShort=patternSavingFromDeviceLongPush
-    if erg > 8:
+    if version > 8:
         abusliconf.brownoutThr=cmdRegisters[3]
-    if erg > 9:
+    if version > 9:
         abusliconf.description=description
     abusliconf.timervals=timeoutvalsFromDevice
     abusliconf.outDefaults=outDefaultsFromDevice
+
+
+    if version > 21:
+        abusliconf.debouncetime=debouncetimeFromDevice
     abusliconf.writeConfToFile()
     print ("Written to file: "+abusliconf.filename)
     
@@ -329,13 +345,13 @@ if (args.command == "download"):
 
 elif (args.command == "compare"):
     if probe():
-        erg=getFeatures()
+        version=getFeatures()
         if compare():
             print("Verification: pass")
 
 elif(args.command == "eeprom-download"):
     if probe():
-        erg=getFeatures()
+        version=getFeatures()
         question=str(raw_input('Warning! Configuration stored in RAM will be overwritten with EEPROM content. Continue? (y/n)'))
         if(question=='y'):
             print("Okay.")
@@ -348,12 +364,14 @@ elif(args.command == "eeprom-download"):
             abusliconf.timerOConf=timerOConfFromDevice
             abusliconf.longPushThr=cmdRegisters[1]
             abusliconf.timeoutThr=cmdRegisters[2]
-            if erg >8:
+            if version >8:
                 abusliconf.brownoutThr=cmdRegisters[3]
             abusliconf.timervals=timeoutvalsFromDevice
             abusliconf.outDefaults=outDefaultsFromDevice
-            if erg > 9:
+            if version > 9:
                 abusliconf.description=description
+            if version > 21:
+                abusliconf.debouncetime=debouncetimeFromDevice
             abusliconf.writeConfToFile()
             print ("Writing to file: "+abusliconf.filename)
             if(compare()):
@@ -363,7 +381,7 @@ elif(args.command == "eeprom-download"):
 
 elif (args.command == "upload"):
     if probe():
-        erg=getFeatures()
+        version=getFeatures()
         upload()
         if(compare()):
             print("Verification: pass")
@@ -371,7 +389,7 @@ elif (args.command == "upload"):
 
 elif (args.command == "store"):
     if probe():
-        erg=getFeatures()
+        version=getFeatures()
         if(compare()):
             print("Verification: pass")
             store()

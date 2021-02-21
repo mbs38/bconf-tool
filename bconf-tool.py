@@ -32,14 +32,14 @@ patternSavingFromDeviceShortPush = [False]*16
 patternSavingFromDeviceLongPush = [False]*16
 description = ""
 global erg
-SwVersions = ['-','reading out firmware version','','timer controlled outputs, default output states on startup','-','-','-','-','-','brownout','description','autorest flags','support for 1TE device','group all on instead of pattern saving possible','new firmware/hardware register layout']
-BoardTypes = ["unknown","agsBusLi","MonsterHW02","MonsterHW04","HutBasic","WBCv2","VariantWBCv2","AGSomat","HutVertical/1TE","5 channel LED PWM Dimmer"]
-
+SwVersions = ['-','reading out firmware version','','timer controlled outputs, default output states on startup','-','-','-','-','-','brownout','description','autorest flags','support for 1TE device','group all on instead of pattern saving possible','new firmware/hardware register layout','-','-','fix debounce for noisy envrironments','-','-','Uptime now in input registers 0 to 3']
+BoardTypes = ["unknown","agsBusLi","MonsterHW02","MonsterHW04","HutBasic","WBCv2","VariantWBCv2","AGSomat","HutVertical/1TE","5 channel LED PWM Dimmer","WBCv2 with Atmega328PB"]
 client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=1.0)
 try:
     connection = client.connect()
 except:
     print("Cannot open serial port. Is "+port+" available?")
+    exit()
 
 def getFeatures():
     version = getFwVersion()
@@ -49,6 +49,12 @@ def getFeatures():
             version=int(result.registers[1])
             devType=int(result.registers[2])
             print("Firmware-Version: "+str(version))
+             
+            if(version>((len(SwVersions)))):
+                print("THIS VERSION OF BCONF-TOOL SUPPORTS DEVICES UP TO FIRMWARE VERSION "+str(len(SwVersions))+"!")
+                print("THIS DEVICE HAS FIRMWARE VERSION "+str(version)+"! UPDATE BCONF-TOOL!")
+            if(devType>(len(BoardTypes)-1)):
+                print("THIS VERSION OF BCONF-TOOL DOES NOT SUPPORT THIS DEVICE! UPDATE BCONF-TOOL!")
             print("Hardware/Board-Type: "+BoardTypes[devType])
         except:
             print("Cannot read extended fw/hw identifier.")
@@ -82,7 +88,12 @@ def getFeatures():
     return version
 
 def probe():
-    result0 = client.read_coils(2000,1,unit=unit)
+    try: 
+        result0 = client.read_coils(2000,1,unit=unit)
+    except:
+        print("Cannot open serial port. Is "+port+" available?")
+        exit()
+        return False
     try:
         result0.string
     except:
@@ -90,6 +101,7 @@ def probe():
         return True
     else:
         print("Client "+str(unit)+" unreachable!")
+        exit()
         return False
 
 def getFwVersion():

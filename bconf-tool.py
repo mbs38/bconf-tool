@@ -42,6 +42,18 @@ except:
     print("Cannot open serial port. Is "+port+" available?")
     exit()
 
+def checkinsanity():
+    if abusliconf.debouncetime<8 or abusliconf.debouncetime>25:
+        print("ERROR! Debounce time illegal. Must be 7 < debouncetime < 26.")
+        return True
+    if (abusliconf.debouncetime==25 and abusliconf.longPushThr!=30) or (abusliconf.debouncetime==8 and abusliconf.longPushThr!=100) or (abusliconf.debouncetime!=8 and abusliconf.debouncetime!=25):
+        print("WARNING: The debounce time value and the longpush threshold value must fit each other. Well tested working values are:")
+        print("debounce time = 8, longpush thr = 100")
+        print("debounce time = 25, longpush thr = 30")
+        print("From firmware version 22 onward 8/100 is the new standard. If you change these settings and your inputs don't work it's not my problem..")
+    return False
+        
+
 def getFeatures():
     version = getFwVersion()
     if(version >= 60000): #device with fw version 15+ => "extended fw/hw identifiers"
@@ -277,6 +289,10 @@ def upload():
         print("ERROR! Description in config file too long! Maximum is 16 characters!")
         client.close()
         exit()
+    if version>21:
+        if checkinsanity():
+            client.close()
+            exit()
     try:
         result0 = client.write_coils(2000,abusliconf.ioConf[0:512],unit=unit)
         result0 = client.write_coils(2512,abusliconf.ioConf[512:1024],unit=unit)

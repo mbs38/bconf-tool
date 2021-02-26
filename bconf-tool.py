@@ -224,7 +224,8 @@ def compare():
             testResult=1
     if(version>9):
         if(repr(abusliconf.description)==repr(description)):
-            print("Description: "+"("+description+")")
+            if len(description)>0:
+                print("Description: "+"("+description+")")
         else:
     	    print("description doesn't match!")
     	    testResult=1

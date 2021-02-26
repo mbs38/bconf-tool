@@ -26,24 +26,24 @@ global coilsChanged
 global discretesChanged
 
 def probe():
-	try:
-		client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
-		connection = client.connect()
-		result0 = client.read_coils(2000,1,unit=unit)
-		client.close()
-	except:
-		print ("Serial error. Is "+port+" available?")
-		client.close()
-	else:
-		try:
-			result0.string
-		except:
-			client.close()
-			return True
-		else:
-			client.close()
-			print("Client unreachable!")
-			return False
+        try:
+                client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
+                connection = client.connect()
+                result0 = client.read_coils(2000,1,unit=unit)
+                client.close()
+        except:
+                print ("Serial error. Is "+port+" available?")
+                client.close()
+        else:
+                try:
+                        result0.string
+                except:
+                        client.close()
+                        return True
+                else:
+                        client.close()
+                        print("Client unreachable!")
+                        return False
 
 def printStates(outs,ins):
     sys.stdout.write("\n")
@@ -51,10 +51,10 @@ def printStates(outs,ins):
     sys.stdout.write("Outputs        Inputs\n")
     for x in range(0,16):
         sys.stdout.write(outs[x])
-        if(outs[x]=="On"):
+        if(outs[x]=="On "):
             sys.stdout.write(" ")
         sys.stdout.write("            "+ins[x])
-        if(ins[x]=="On"):
+        if(ins[x]=="On "):
             sys.stdout.write(" ")
         sys.stdout.write("\n")
     for x in range(0,19):
@@ -65,10 +65,10 @@ def printStates(outs,ins):
 
 def monitor():
 
-#	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate)
-	try:
-		client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
-		connection = client.connect()
+#       client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate)
+        try:
+                client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
+                connection = client.connect()
                 
                 oldCoils = client.read_coils(0,16,unit=unit)
                 oldDiscretes = client.read_discrete_inputs(0,16,unit=unit)
@@ -87,7 +87,7 @@ def monitor():
                             if(coils.bits[x] != oldCoils.bits[x]):
                                 coilsChanged[x] = True
                             if(coils.bits[x] == True):
-                                outs[x]="On"
+                                outs[x]="On "
                             if(coilsChanged[x] == True):
                                 outs[x]=u"\u001b[31m"+outs[x]+u"\u001b[0m"
 
@@ -95,7 +95,7 @@ def monitor():
                             if(discretes.bits[x] != oldDiscretes.bits[x]):
                                 discretesChanged[x] = True
                             if(discretes.bits[x] == True):
-                                ins[x]="On"
+                                ins[x]="On "
                             if(discretesChanged[x] == True):
                                 ins[x]=u"\u001b[31m"+ins[x]+u"\u001b[0m"
                     #except:
@@ -115,9 +115,9 @@ def monitor():
                         
                     
                 client.close()
-	except:
-		print("Polling error!")
-	client.close()
+        except:
+                print("Polling error!")
+        client.close()
 
 parser = argparse.ArgumentParser()
 

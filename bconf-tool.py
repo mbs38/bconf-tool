@@ -324,8 +324,8 @@ if (args.command == "download"):
     abusliconf.timerOConf=timerOConfFromDevice
     abusliconf.longPushThr=cmdRegisters[1]
     abusliconf.timeoutThr=cmdRegisters[2]
-    abusliconf.patternSavingLong=patternSavingFromDeviceShortPush
-    abusliconf.patternSavingShort=patternSavingFromDeviceLongPush
+    abusliconf.patternSavingLong=patternSavingFromDeviceLongPush
+    abusliconf.patternSavingShort=patternSavingFromDeviceShortPush
     if version > 8:
         abusliconf.brownoutThr=cmdRegisters[3]
     if version > 9:

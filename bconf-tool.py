@@ -369,7 +369,7 @@ elif (args.command == "compare"):
 elif(args.command == "eeprom-download"):
     if probe():
         version=getFeatures()
-        question=str(raw_input('Warning! Configuration stored in RAM will be overwritten with EEPROM content. Continue? (y/n)'))
+        question=str(input('Warning! Configuration stored in RAM will be overwritten with EEPROM content. Continue? (y/n)'))
         if(question=='y'):
             print("Okay.")
             loadEEPROMcontent()

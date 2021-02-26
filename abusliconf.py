@@ -9,31 +9,7 @@ for x in range(0,16):
 #rint(sectionList)
         
 
-config = configparser.RawConfigParser()
-
-
-def makeEmptyConfFile():
-        global filename
-        config.add_section('Global')
-        config.set('Global', 'timeout', 20)
-        config.set('Global', 'long-push-threshold','')
-        config.set('Global', 'brownout-threshold', 0)
-        config.set('Global', 'description', 'none')
-        for section in sectionList:
-                config.add_section(section)
-                config.set(section, 'short-on', '')
-                config.set(section, 'short-off','')
-                config.set(section, 'long-on','')
-                config.set(section, 'long-off','')
-                config.set(section, 'switch-type', 'push-button')
-        for outputsection in outputList:
-                config.add_section(outputsection)
-                config.set(outputsection, 'input-controlled','never')
-                config.set(outputsection, 'timer-controlled','never')
-                config.set(outputsection, 'timeout-value', 0)
-                config.set(outputsection, 'default-state', 'off')
-        with open(filename, 'wb') as configfile:
-                config.write(configfile)
+config = configparser.ConfigParser()
 
 
 buttonConf=[False]*16
@@ -72,7 +48,7 @@ def readConfFromFile():
                 #print("Long-push-thr: "+str(longPushThr))
         except:
                 #global longPushThr
-                debouncetime = 25
+                debouncetime = 8
                 #print("no long push threshold in config file")
 
         try:    
@@ -96,22 +72,22 @@ def readConfFromFile():
 
         for sections in sectionList:
                 try:
-                        shortOn = map(int,config.get(sections, 'short-on').split(','))
+                        shortOn = list(map(int,config.get(sections, 'short-on').split(',')))
                 #       print("Section: "+str(sectionList.index(sections))+", shortOn: "+str(shortOn))
                 except:
                         shortOn=[]
                 try:
-                        shortOff = map(int,config.get(sections, 'short-off').split(','))
+                        shortOff = list(map(int,config.get(sections, 'short-off').split(',')))
                 #       print("Section: "+str(sectionList.index(sections))+", shortOff: "+str(shortOff))
                 except:
                         shortOff=[]
                 try:
-                        longOn = map(int,config.get(sections, 'long-on').split(','))
+                        longOn = list(map(int,config.get(sections, 'long-on').split(',')))
                 #       print("Section: "+str(sectionList.index(sections))+", longOn: "+str(longOn))
                 except:
                         longOn=[]
                 try:
-                        longOff = map(int,config.get(sections, 'long-off').split(','))
+                        longOff = list(map(int,config.get(sections, 'long-off').split(',')))
                 #       print("Section: "+str(sectionList.index(sections))+", longOff: "+str(longOff))
                 except:
                         longOff=[]
@@ -139,7 +115,7 @@ def readConfFromFile():
                         skip = 0
                         multiplier=(sectionList.index(sections))*8
 
-                for x in xrange(len(shortOn)):
+                for x in range(0,len(shortOn)):
                         if (shortOn[x] < 8):
                                 bitLocation=shortOn[x]+multiplier+skip
                                 ioConf[bitLocation]=True        
@@ -150,7 +126,7 @@ def readConfFromFile():
                                 ioConf[bitLocation]=True
                 #       print(str(shortOn[x])+": Bit"+str(bitLocation))
                 
-                for x in xrange(len(shortOff)):
+                for x in range(0,len(shortOff)):
                         if (shortOff[x] < 8):
                                 bitLocation=shortOff[x]+multiplier+64+skip
                                 ioConf[bitLocation]=True        
@@ -160,7 +136,7 @@ def readConfFromFile():
                 #       print(str(shortOff[x])+": Bit"+str(bitLocation))
                 
 
-                for x in xrange(len(longOn)):
+                for x in range(0,len(longOn)):
                         if (longOn[x] < 8):
                                 bitLocation=longOn[x]+256+multiplier+skip
                                 ioConf[bitLocation]=True        
@@ -171,7 +147,7 @@ def readConfFromFile():
                                 ioConf[bitLocation]=True
                 #       print(str(longOn[x])+": Bit"+str(bitLocation))
 
-                for x in xrange(len(longOff)):
+                for x in range(0,len(longOff)):
                         if (longOff[x] < 8):
                                 bitLocation=longOff[x]+256+64+multiplier+skip
                                 ioConf[bitLocation]=True        
@@ -230,13 +206,13 @@ def readConfFromFile():
 #@brief: writeConfTofile(), write configuration data to file
 def writeConfToFile():
         global filename
-        configwriter = configparser.RawConfigParser()
+        configwriter = configparser.ConfigParser()
         configwriter.add_section('Global')
-        configwriter.set('Global', 'timeout', timeoutThr)
-        configwriter.set('Global', 'long-push-threshold', longPushThr)
-        configwriter.set('Global', 'debounce-time', debouncetime)
-        configwriter.set('Global', 'brownout-threshold', brownoutThr)
-        configwriter.set('Global', 'description', description)
+        configwriter.set('Global', 'timeout', str(timeoutThr))
+        configwriter.set('Global', 'long-push-threshold', str(longPushThr))
+        configwriter.set('Global', 'debounce-time', str(debouncetime))
+        configwriter.set('Global', 'brownout-threshold', str(brownoutThr))
+        configwriter.set('Global', 'description', str(description))
         for section in sectionList:
                 try:
                         configwriter.add_section(section)
@@ -257,7 +233,7 @@ def writeConfToFile():
                         print("Section "+outputsection+" already exists, overwriting")
                 configwriter.set(outputsection, 'input-controlled','never')
                 configwriter.set(outputsection, 'timer-controlled','never')
-                configwriter.set(outputsection, 'timeout-value',0)
+                configwriter.set(outputsection, 'timeout-value','0')
                 configwriter.set(outputsection, 'default-state', 'off')
 
 ####################### prepare lists for config file #####################################
@@ -330,7 +306,7 @@ def writeConfToFile():
                         configwriter.set(outputsection, 'timer-controlled','timeout-only')
                 if(timerOConf[outputList.index(outputsection)]):
                         configwriter.set(outputsection, 'timer-controlled','always')
-                configwriter.set(outputsection,'timeout-value',timervals[outputList.index(outputsection)])
+                configwriter.set(outputsection,'timeout-value',str(timervals[outputList.index(outputsection)]))
                 
         for outputsection in outputList:
                 if(outDefaults[outputList.index(outputsection)]):
@@ -338,6 +314,6 @@ def writeConfToFile():
                 else:
                         configwriter.set(outputsection, 'default-state', 'off')
         
-        with open(filename, 'wb') as configfile:
+        with open(filename, 'w') as configfile:
                 configwriter.write(configfile)
 

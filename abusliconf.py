@@ -40,7 +40,7 @@ def readConfFromFile():
                 #print("Long-push-thr: "+str(longPushThr))
         except:
                 #global longPushThr
-                longPushThr = 30
+                longPushThr = 9999
                 #print("no long push threshold in config file")
         try:
                 #global longPushThr
@@ -48,7 +48,7 @@ def readConfFromFile():
                 #print("Long-push-thr: "+str(longPushThr))
         except:
                 #global longPushThr
-                debouncetime = 8
+                debouncetime = 9999
                 #print("no long push threshold in config file")
 
         try:    

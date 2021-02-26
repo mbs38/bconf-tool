@@ -202,11 +202,15 @@ def compare():
     else:
         testResult=1
         print("output configuration doesn't match!")
-    if(abusliconf.longPushThr==cmdRegisters[1]):
-        pass#print("longpush threshold matches. "+"("+str(cmdRegisters[1])+")")
-    else:
-        testResult=1
-        print("longpush threshold doesn't match!")
+    if version > 21:
+        if abusliconf.longPushThr==9999:
+            abusliconf.longPushThr=100
+    if abusliconf.longPushThr!=9999:    
+        if(abusliconf.longPushThr==cmdRegisters[1]):
+            pass#print("longpush threshold matches. "+"("+str(cmdRegisters[1])+")")
+        else:
+            testResult=1
+            print("longpush threshold doesn't match!")
     if(abusliconf.timeoutThr==cmdRegisters[2]):
         pass#print("bus timeout threshold matches. "+"("+str(cmdRegisters[2])+")")
     else:
@@ -254,6 +258,8 @@ def compare():
             print("pattern saving (long push) control bits don't match")
    
     if version > 21:
+        if abusliconf.debouncetime==9999:
+            abusliconf.debouncetime=8
         if debouncetimeFromDevice==abusliconf.debouncetime:
             pass
         else:
@@ -290,9 +296,20 @@ def upload():
         client.close()
         exit()
     if version>21:
+        if abusliconf.debouncetime==9999:
+            abusliconf.debouncetime=8
+            print("INFO: Setting debouncetime to default value: 8")
+        if abusliconf.longPushThr==9999:
+            abusliconf.longPushThr=100
+            print("INFO: Setting longpush threshold to default value: 100")
         if checkinsanity():
             client.close()
             exit()
+    else:
+        if abusliconf.longPushThr==9999:
+            abusliconf.longPushThr=30
+            print("INFO: Setting longpush threshold to default value: 100")
+
     try:
         result0 = client.write_coils(2000,abusliconf.ioConf[0:512],unit=unit)
         result0 = client.write_coils(2512,abusliconf.ioConf[512:1024],unit=unit)

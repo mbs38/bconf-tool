@@ -144,15 +144,15 @@ def readConfs():
     else:
         result8 = client.read_holding_registers(2000,5,unit=unit)
     if(version > 2):
-    	result5 = client.read_coils(3072,32,unit=unit)
-    	result6 = client.read_holding_registers(4000,16,unit=unit)
-    	result7 = client.read_coils(3104,16,unit=unit)
-    	for x in range(0, 32):
-    		timerOConfFromDevice[x]=result5.bits[x]
-    	for x in range(0, 16):
-    		timeoutvalsFromDevice[x]=int(result6.registers[x])
-    	for x in range(0, 16):
-    		outDefaultsFromDevice[x]=result7.bits[x]
+        result5 = client.read_coils(3072,32,unit=unit)
+        result6 = client.read_holding_registers(4000,16,unit=unit)
+        result7 = client.read_coils(3104,16,unit=unit)
+        for x in range(0, 32):
+                timerOConfFromDevice[x]=result5.bits[x]
+        for x in range(0, 16):
+                timeoutvalsFromDevice[x]=int(result6.registers[x])
+        for x in range(0, 16):
+                outDefaultsFromDevice[x]=result7.bits[x]
     if version > 9:
         resultDescr = client.read_holding_registers(4016,8,unit=unit)
         global description
@@ -166,12 +166,12 @@ def readConfs():
     if version > 8:
         cmdRegisters[3]=int(result8.registers[3])
     for x in range(0, 512):
-    	IOcffromDevice[x] = result0.bits[x]
-    	IOcffromDevice[x+512] = result1.bits[x]
+        IOcffromDevice[x] = result0.bits[x]
+        IOcffromDevice[x+512] = result1.bits[x]
     for x in range(0, 16):
-    	buttonConf[x]=result3.bits[x]
+        buttonConf[x]=result3.bits[x]
     for x in range(0, 32):
-    	oConfFromDevice[x]=result2.bits[x]
+        oConfFromDevice[x]=result2.bits[x]
 
     if version > 21:
         global debouncetimeFromDevice
@@ -239,8 +239,8 @@ def compare():
             if len(description)>0:
                 print("Description: "+"("+description+")")
         else:
-    	    print("description doesn't match!")
-    	    testResult=1
+            print("description doesn't match!")
+            testResult=1
     if version > 11:
         if patternSavingFromDeviceShortPush==abusliconf.patternSavingShort:
             pass
@@ -268,18 +268,18 @@ def compare():
     
 def store():
     try:
-    	result4 = client.write_register(2000,17239,unit=unit)
-    	print("Store: ok")
+        result4 = client.write_register(2000,17239,unit=unit)
+        print("Store: ok")
     except:
-    	print("Modbus error. Store failed.")
+        print("Modbus error. Store failed.")
 
 def loadEEPROMcontent():
     print("Trying to load config from EEPROM.")
     try:
-    	result4 = client.write_register(2000,17234,unit=unit)
-    	print("Loading from EEPROM initiated.")
+        result4 = client.write_register(2000,17234,unit=unit)
+        print("Loading from EEPROM initiated.")
     except:
-    	print("Modbus error. Loading from EEPROM failed.")
+        print("Modbus error. Loading from EEPROM failed.")
 
 
 def upload():
@@ -321,7 +321,7 @@ def upload():
             result5 = client.write_register(4024,abusliconf.debouncetime,unit=unit)
         print("Upload done.")
     except:
-    	print("Modbus error during upload.")
+        print("Modbus error during upload.")
 
 parser = argparse.ArgumentParser()
 
@@ -381,6 +381,8 @@ elif(args.command == "eeprom-download"):
             abusliconf.timerOConf=timerOConfFromDevice
             abusliconf.longPushThr=cmdRegisters[1]
             abusliconf.timeoutThr=cmdRegisters[2]
+            abusliconf.patternSavingLong=patternSavingFromDeviceLongPush
+            abusliconf.patternSavingShort=patternSavingFromDeviceShortPush
             if version >8:
                 abusliconf.brownoutThr=cmdRegisters[3]
             abusliconf.timervals=timeoutvalsFromDevice

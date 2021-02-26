@@ -1,4 +1,4 @@
-import ConfigParser
+import configparser
 
 
 outputList=[]
@@ -9,7 +9,7 @@ for x in range(0,16):
 #rint(sectionList)
         
 
-config = ConfigParser.RawConfigParser()
+config = configparser.RawConfigParser()
 
 
 def makeEmptyConfFile():
@@ -230,7 +230,7 @@ def readConfFromFile():
 #@brief: writeConfTofile(), write configuration data to file
 def writeConfToFile():
         global filename
-        configwriter = ConfigParser.RawConfigParser()
+        configwriter = configparser.RawConfigParser()
         configwriter.add_section('Global')
         configwriter.set('Global', 'timeout', timeoutThr)
         configwriter.set('Global', 'long-push-threshold', longPushThr)

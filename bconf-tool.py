@@ -1,5 +1,5 @@
 # Ugly code following!
-
+import knownendpoints
 import abusliconf
 import array
 import serial
@@ -33,8 +33,8 @@ patternSavingFromDeviceLongPush = [False]*16
 description = ""
 debouncetimeFromDevice = 0
 global version
-SwVersions = ['-','reading out firmware version','','timer controlled outputs, default output states on startup','-','-','-','-','-','brownout','description','autorest flags','support for 1TE device','group all on instead of pattern saving possible','new firmware/hardware register layout','-','-','fix debounce for noisy envrironments','-','-','Uptime now in input registers 0 to 3','debounce time now configurable using bconf tool']
-BoardTypes = ["unknown","agsBusLi","MonsterHW02","MonsterHW04","HutBasic","WBCv2","VariantWBCv2","AGSomat","HutVertical/1TE","5 channel LED PWM Dimmer","WBCv2 with Atmega328PB"]
+SwVersions = knownendpoints.SwVersions
+BoardTypes = knownendpoints.BoardTypes
 client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=1.0)
 try:
     connection = client.connect()

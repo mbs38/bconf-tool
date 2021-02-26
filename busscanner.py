@@ -4,13 +4,14 @@ import pymodbus
 import serial
 import argparse
 from pymodbus.client.sync import ModbusSerialClient as ModbusClient #initialize a serial RTU client instance
+import knownendpoints
 
 baudrate = 38400
 parity = 'N'
 port = "/dev/ttyUSB0"
 failed = 0
 
-BoardTypes = ["unknown","agsBusLi","MonsterHW02","MonsterHW04","HutBasic","WBCv2","VariantWBCv2","AGSomat","HutVertical/1TE","5 channel LED PWM Dimmer"]
+BoardTypes = knownendpoints.BoardTypes
 
 try:
     client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.1)

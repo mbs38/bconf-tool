@@ -24,6 +24,8 @@ description="none"
 outDefaults=[False]*16
 patternSavingShort=[False]*16
 patternSavingLong=[False]*16
+fastPwmEnable = [False]*16
+ultraSlowPwmEnable = [False]*16
 debouncetime=0
 
 def readConfFromFile():
@@ -33,6 +35,8 @@ def readConfFromFile():
         global brownoutThr
         global description
         global debouncetime
+        global fastPwmEnable
+        global ultraSlowPwmEnable
         config.read(filename)
         try:
                 #global longPushThr
@@ -202,6 +206,16 @@ def readConfFromFile():
                 except:
                         outDefaults[outputList.index(outputsection)]=False
                 
+                try:
+                        pwmStr = config.get(outputsection, 'pwm')
+                except:
+                        pwmStr=""
+                
+                if pwmStr == 'fast':
+                        fastPwmEnable[outputList.index(outputsection)]=True
+                elif pwmStr == 'ultra-slow':
+                        ultraSlowPwmEnable[outputList.index(outputsection)]=True
+                
 ########################################################################################
 #@brief: writeConfTofile(), write configuration data to file
 def writeConfToFile():
@@ -235,6 +249,8 @@ def writeConfToFile():
                 configwriter.set(outputsection, 'timer-controlled','never')
                 configwriter.set(outputsection, 'timeout-value','0')
                 configwriter.set(outputsection, 'default-state', 'off')
+                configwriter.set(outputsection, 'pwm', 'off')
+                
 
 ####################### prepare lists for config file #####################################
         for x in range(0,16):
@@ -301,6 +317,12 @@ def writeConfToFile():
                 if(oConf[outputList.index(outputsection)]):
                         configwriter.set(outputsection, 'input-controlled','always')
         
+        for outputsection in outputList:
+                if(fastPwmEnable[outputList.index(outputsection)]):
+                        configwriter.set(outputsection, 'pwm','fast')
+                if(ultraSlowPwmEnable[outputList.index(outputsection)]):
+                        configwriter.set(outputsection, 'pwm','ultra-slow')
+
         for outputsection in outputList:
                 if(timerOConf[outputList.index(outputsection)+16]):
                         configwriter.set(outputsection, 'timer-controlled','timeout-only')

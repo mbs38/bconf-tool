@@ -30,6 +30,8 @@ timeoutvalsFromDevice = [0]*16
 outDefaultsFromDevice = [False]*16
 patternSavingFromDeviceShortPush = [False]*16
 patternSavingFromDeviceLongPush = [False]*16
+fastPwmEnableFromDevice = [False]*16
+ultraSlowPwmEnableFromDevice = [False]*16
 description = ""
 debouncetimeFromDevice = 0
 global version
@@ -177,6 +179,15 @@ def readConfs():
         global debouncetimeFromDevice
         debouncetimeFromDevice = int(client.read_holding_registers(4024,1,unit=unit).registers[0])
 
+    if version > 22:
+        global fastPwmEnableFromDevice
+        global ultraSlowPwmEnableFromDevice
+        resPwm = client.read_coils(3152,32,unit=unit)
+        for x in range(0,16):
+            fastPwmEnableFromDevice[x]=resPwm.bits[x] 
+        for x in range(0,16):
+            ultraSlowPwmEnableFromDevice[x]=resPwm.bits[x+16] 
+
 def compare():
     readConfs()
     print("Comparing.")
@@ -266,6 +277,19 @@ def compare():
             testResult=1
             print("debounce time does not match")
     
+    if version > 22:
+        if fastPwmEnableFromDevice==abusliconf.fastPwmEnable:
+            pass
+        else:
+            print("fast pwm settings don't match")
+            testResult=1
+        if ultraSlowPwmEnableFromDevice==abusliconf.ultraSlowPwmEnable:
+            pass
+        else:
+            print("ultra slow pwm settings don't match")
+            testResult=1
+            
+
     if testResult == 1:
         print("ERROR: The device's configuration doesn't match the config file!")
         return False
@@ -336,6 +360,9 @@ def upload():
             result5 = client.write_coils(3136,abusliconf.patternSavingLong,unit=unit)
         if version > 21:
             result5 = client.write_register(4024,abusliconf.debouncetime,unit=unit)
+        if version > 22:
+            result5 = client.write_coils(3152,abusliconf.fastPwmEnable,unit=unit)
+            result5 = client.write_coils(3168,abusliconf.ultraSlowPwmEnable,unit=unit)
         print("Upload done.")
     except:
         print("Modbus error during upload.")
@@ -370,6 +397,10 @@ if (args.command == "download"):
 
     if version > 21:
         abusliconf.debouncetime=debouncetimeFromDevice
+    if version > 22:
+        abusliconf.ultraSlowPwmEnable=ultraSlowPwmEnableFromDevice
+        abusliconf.fastPwmEnable=fastPwmEnableFromDevice
+
     abusliconf.writeConfToFile()
     print ("Written to file: "+abusliconf.filename)
     
@@ -408,6 +439,9 @@ elif(args.command == "eeprom-download"):
                 abusliconf.description=description
             if version > 21:
                 abusliconf.debouncetime=debouncetimeFromDevice
+            if version > 22:
+                abusliconf.ultraSlowPwmEnable=ultraSlowPwmEnableFromDevice
+                abusliconf.fastPwmEnable=fastPwmEnableFromDevice
             abusliconf.writeConfToFile()
             print ("Writing to file: "+abusliconf.filename)
             if(compare()):

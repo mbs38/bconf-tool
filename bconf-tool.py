@@ -7,8 +7,8 @@ import argparse
 import time
 
 from pymodbus.pdu import ModbusRequest
-from pymodbus.client.sync import ModbusSerialClient as SerialModbusClient
-from pymodbus.client.sync import ModbusTcpClient as TCPModbusClient
+from pymodbus.client import ModbusSerialClient as SerialModbusClient
+from pymodbus.client import ModbusTcpClient as TCPModbusClient
 from pymodbus.transaction import ModbusRtuFramer
 #import logging
 #logging.basicConfig()
@@ -19,7 +19,7 @@ from pymodbus.transaction import ModbusRtuFramer
 baudrate = 38400
 parity = 'N'
 port = "/dev/ttyUSB0"
-unit=0 # the slave unit this request is targeting
+slave=0 # the slave save this request is targeting
 
 IOcffromDevice = [False]*1024
 buttonConf = [False]*16
@@ -60,7 +60,7 @@ def getFeatures():
     version = getFwVersion()
     if(version >= 60000): #device with fw version 15+ => "extended fw/hw identifiers"
         try:
-            result = client.read_holding_registers(10000,3,unit=unit)
+            result = client.read_holding_registers(10000,3,slave=save)
             version=int(result.registers[1])
             devType=int(result.registers[2])
             print("Firmware-Version: "+str(version))
@@ -103,25 +103,26 @@ def getFeatures():
     return version
 
 def probe():
-    try: 
-        result0 = client.read_coils(2000,1,unit=unit)
-    except:
+    try:
+        result0 = client.read_coils(2000,1,slave=save)
+    except Exception as e:
+        print(e)
         print("Cannot open serial port. Is "+port+" available?")
         exit()
         return False
     try:
-        result0.string
+        print(result0.string)
     except:
-        print("Client "+str(unit)+" available.")
+        print("Client "+str(save)+" available.")
         return True
     else:
-        print("Client "+str(unit)+" unreachable!")
+        print("Client "+str(save)+" unreachable!")
         exit()
         return False
 
 def getFwVersion():
     try:
-        result = client.read_holding_registers(10000,1,unit=unit)
+        result = client.read_holding_registers(10000,1,slave=save)
         vers=int(result.registers[0])
     except:
         print("Cannot read FW-Version. Maybe legacy or incompatible device?")
@@ -130,25 +131,25 @@ def getFwVersion():
         return vers
 
 def readConfs():
-    result0 = client.read_coils(2000,512,unit=unit)
-    result1 = client.read_coils(2512,512,unit=unit)
-    result2 = client.read_coils(3024,32,unit=unit)
-    result3 = client.read_coils(3056,16,unit=unit)
+    result0 = client.read_coils(2000,512,slave=save)
+    result1 = client.read_coils(2512,512,slave=save)
+    result2 = client.read_coils(3024,32,slave=save)
+    result3 = client.read_coils(3056,16,slave=save)
     if version>11:
-        result4 = client.read_coils(3120,32,unit=unit)
+        result4 = client.read_coils(3120,32,slave=save)
         for x in range(0, 16):
             patternSavingFromDeviceShortPush[x]=result4.bits[x]
         for x in range(0, 16):
             patternSavingFromDeviceLongPush[x]=result4.bits[x+16]
 
     if version < 9:
-        result8 = client.read_holding_registers(2000,3,unit=unit)
+        result8 = client.read_holding_registers(2000,3,slave=save)
     else:
-        result8 = client.read_holding_registers(2000,5,unit=unit)
+        result8 = client.read_holding_registers(2000,5,slave=save)
     if(version > 2):
-        result5 = client.read_coils(3072,32,unit=unit)
-        result6 = client.read_holding_registers(4000,16,unit=unit)
-        result7 = client.read_coils(3104,16,unit=unit)
+        result5 = client.read_coils(3072,32,slave=save)
+        result6 = client.read_holding_registers(4000,16,slave=save)
+        result7 = client.read_coils(3104,16,slave=save)
         for x in range(0, 32):
                 timerOConfFromDevice[x]=result5.bits[x]
         for x in range(0, 16):
@@ -156,7 +157,7 @@ def readConfs():
         for x in range(0, 16):
                 outDefaultsFromDevice[x]=result7.bits[x]
     if version > 9:
-        resultDescr = client.read_holding_registers(4016,8,unit=unit)
+        resultDescr = client.read_holding_registers(4016,8,slave=save)
         global description
         description=""
         for x in range(0, 8):
@@ -177,12 +178,12 @@ def readConfs():
 
     if version > 21:
         global debouncetimeFromDevice
-        debouncetimeFromDevice = int(client.read_holding_registers(4024,1,unit=unit).registers[0])
+        debouncetimeFromDevice = int(client.read_holding_registers(4024,1,slave=save).registers[0])
 
     if version > 22:
         global fastPwmEnableFromDevice
         global ultraSlowPwmEnableFromDevice
-        resPwm = client.read_coils(3152,32,unit=unit)
+        resPwm = client.read_coils(3152,32,slave=save)
         for x in range(0,16):
             fastPwmEnableFromDevice[x]=resPwm.bits[x] 
         for x in range(0,16):
@@ -298,7 +299,7 @@ def compare():
     
 def store():
     try:
-        result4 = client.write_register(2000,17239,unit=unit)
+        result4 = client.write_register(2000,17239,slave=save)
         print("Store: ok")
     except:
         print("Modbus error. Store failed.")
@@ -306,7 +307,7 @@ def store():
 def loadEEPROMcontent():
     print("Trying to load config from EEPROM.")
     try:
-        result4 = client.write_register(2000,17234,unit=unit)
+        result4 = client.write_register(2000,17234,slave=save)
         print("Loading from EEPROM initiated.")
     except:
         print("Modbus error. Loading from EEPROM failed.")
@@ -335,18 +336,18 @@ def upload():
             print("INFO: Setting longpush threshold to default value: 100")
 
     try:
-        result0 = client.write_coils(2000,abusliconf.ioConf[0:512],unit=unit)
-        result0 = client.write_coils(2512,abusliconf.ioConf[512:1024],unit=unit)
-        result2 = client.write_coils(3024,abusliconf.oConf,unit=unit)
+        result0 = client.write_coils(2000,abusliconf.ioConf[0:512],slave=save)
+        result0 = client.write_coils(2512,abusliconf.ioConf[512:1024],slave=save)
+        result2 = client.write_coils(3024,abusliconf.oConf,slave=save)
         if(version>2):
-            result5 = client.write_coils(3072,abusliconf.timerOConf,unit=unit)
-            result7 = client.write_coils(3104,abusliconf.outDefaults, unit=unit)
-            result6 = client.write_registers(4000,abusliconf.timervals,unit=unit)
-        result3 = client.write_coils(3056,abusliconf.buttonConf,unit=unit)
-        result4 = client.write_register(2001,abusliconf.longPushThr,unit=unit)
-        result4 = client.write_register(2002,abusliconf.timeoutThr,unit=unit)
+            result5 = client.write_coils(3072,abusliconf.timerOConf,slave=save)
+            result7 = client.write_coils(3104,abusliconf.outDefaults, slave=save)
+            result6 = client.write_registers(4000,abusliconf.timervals,slave=save)
+        result3 = client.write_coils(3056,abusliconf.buttonConf,slave=save)
+        result4 = client.write_register(2001,abusliconf.longPushThr,slave=save)
+        result4 = client.write_register(2002,abusliconf.timeoutThr,slave=save)
         if version > 8:
-            result4 = client.write_register(2003,abusliconf.brownoutThr,unit=unit)
+            result4 = client.write_register(2003,abusliconf.brownoutThr,slave=save)
         if version > 9:
             descrAsInts = [0]*8
             for x in range(0, 8):
@@ -354,15 +355,15 @@ def upload():
                     descrAsInts[x]=int(ord(abusliconf.description[x*2]))
                 if (x*2+1)<len(abusliconf.description):
                     descrAsInts[x]=int(descrAsInts[x]|(ord(abusliconf.description[x*2+1])<<8))
-            result5 = client.write_registers(4016,descrAsInts,unit=unit)
+            result5 = client.write_registers(4016,descrAsInts,slave=save)
         if version > 11:
-            result5 = client.write_coils(3120,abusliconf.patternSavingShort,unit=unit)
-            result5 = client.write_coils(3136,abusliconf.patternSavingLong,unit=unit)
+            result5 = client.write_coils(3120,abusliconf.patternSavingShort,slave=save)
+            result5 = client.write_coils(3136,abusliconf.patternSavingLong,slave=save)
         if version > 21:
-            result5 = client.write_register(4024,abusliconf.debouncetime,unit=unit)
+            result5 = client.write_register(4024,abusliconf.debouncetime,slave=save)
         if version > 22:
-            result5 = client.write_coils(3152,abusliconf.fastPwmEnable,unit=unit)
-            result5 = client.write_coils(3168,abusliconf.ultraSlowPwmEnable,unit=unit)
+            result5 = client.write_coils(3152,abusliconf.fastPwmEnable,slave=save)
+            result5 = client.write_coils(3168,abusliconf.ultraSlowPwmEnable,slave=save)
         print("Upload done.")
     except:
         print("Modbus error during upload.")
@@ -373,7 +374,7 @@ parser.add_argument("command", type=str, help="command to perform. Allowed comma
 parser.add_argument("address", type=int, help="device address")
 parser.add_argument("file", type=str, help="config file source/destination")
 args = parser.parse_args()
-unit = args.address
+save = args.address
 abusliconf.filename = args.file
 if (args.command == "download"):
     if probe():

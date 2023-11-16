@@ -5,7 +5,7 @@ import pymodbus
 import serial
 import argparse
 from pymodbus.pdu import ModbusRequest
-from pymodbus.client.sync import ModbusSerialClient as ModbusClient #initialize a serial RTU client instance
+from pymodbus.client import ModbusSerialClient as ModbusClient #initialize a serial RTU client instance
 from pymodbus.transaction import ModbusRtuFramer
 
 #import logging
@@ -23,7 +23,7 @@ def probe():
 	try:
 		client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
 		connection = client.connect()
-		result0 = client.read_coils(2000,1,unit=unit)
+		result0 = client.read_coils(2000,1,slave=unit)
 		client.close()
 	except:
 		print ("Serial error. Is "+port+" available?")
@@ -46,17 +46,17 @@ def chAdr():
 	client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate)
 	try:
 		connection = client.connect()
-		adrReg = client.read_holding_registers(1000,1,unit=unit)
-		result = client.write_register(1000,newAdr,unit=unit)		
-		adrReg = client.read_holding_registers(1000,1,unit=unit)
+		adrReg = client.read_holding_registers(1000,1,slave=unit)
+		result = client.write_register(1000,newAdr,slave=unit)		
+		adrReg = client.read_holding_registers(1000,1,slave=unit)
 		if adrReg.registers[0] == newAdr:
 			print("Write: ok")
-			result = client.write_register(1001,16727,unit=unit)		
+			result = client.write_register(1001,16727,slave=unit)		
 		print("Store: ok")
 	except:
 		print("Failed!")
 	try:
-		adrReg = client.read_holding_registers(1000,1,unit=newAdr)
+		adrReg = client.read_holding_registers(1000,1,slave=newAdr)
 		print("Verification: pass")
 		print("New address: "+str(newAdr))
 	except:

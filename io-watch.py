@@ -5,18 +5,21 @@ import array
 import pymodbus
 import serial
 import argparse
-from pymodbus.pdu import ModbusRequest
-from pymodbus.client.sync import ModbusSerialClient as ModbusClient #initialize a serial RTU client instance
-from pymodbus.transaction import ModbusRtuFramer
 
+from pymodbus.pdu import ModbusRequest
+from pymodbus.client import ModbusSerialClient as SerialModbusClient
+from pymodbus.client import ModbusTcpClient as TCPModbusClient
+from pymodbus.transaction import ModbusRtuFramer
 #import logging
 #logging.basicConfig()
-#log = logging.getLogger()
+##log = logging.getLogger()
 #log.setLevel(logging.DEBUG)
+
 
 baudrate = 38400
 parity = 'N'
 port = "/dev/ttyUSB0"
+slave=0 # the slave save this request is targeting
 
 global newAdr
 
@@ -27,9 +30,7 @@ global discretesChanged
 
 def probe():
         try:
-                client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
-                connection = client.connect()
-                result0 = client.read_coils(2000,1,unit=unit)
+                result0 = client.read_coils(2000,1,slave=unit)
                 client.close()
         except:
                 print ("Serial error. Is "+port+" available?")
@@ -66,12 +67,13 @@ def printStates(outs,ins):
 def monitor():
 
 #       client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate)
+        #if True:
         try:
-                client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
-                connection = client.connect()
+                #client = ModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=0.5)
+                #connection = client.connect()
                 
-                oldCoils = client.read_coils(0,16,unit=unit)
-                oldDiscretes = client.read_discrete_inputs(0,16,unit=unit)
+                oldCoils = client.read_coils(0,16,slave=unit)
+                oldDiscretes = client.read_discrete_inputs(0,16,slave=unit)
                 discretesChanged = [False]*16
                 coilsChanged = [False]*16
                 
@@ -79,8 +81,8 @@ def monitor():
                 killvar = 1
                 while killvar == 1:
                     if True:#try:
-                        coils = client.read_coils(0,16,unit=unit)
-                        discretes = client.read_discrete_inputs(0,16,unit=unit)
+                        coils = client.read_coils(0,16,slave=unit)
+                        discretes = client.read_discrete_inputs(0,16,slave=unit)
                         outs = ["Off"]*16
                         ins = ["Off"]*16
                         for x in range(0,16):
@@ -115,15 +117,23 @@ def monitor():
                         
                     
                 client.close()
-        except:
-                print("Polling error!")
+        except Exception as e:
+                print("Polling error: "+str(e))
         client.close()
 
 parser = argparse.ArgumentParser()
 
 parser.add_argument("address", type=int, help="device address")
+parser.add_argument("port", type=str, help="serial port like /dev/ttyUSB0")
 args = parser.parse_args()
 unit = args.address
+
+client = SerialModbusClient(method = "rtu", port = args.port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=1.0)
+try:
+    connection = client.connect()
+except:
+    print("Cannot open serial port. Is "+port+" available?")
+    exit()
 
 
 

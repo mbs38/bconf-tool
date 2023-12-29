@@ -14,16 +14,21 @@ parity = 'N'
 port = "/dev/ttyUSB0"
 failed = 0
 BoardTypes = knownendpoints.BoardTypes
+
+debug = False
+
 if True:
-    client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=1.0)
+    client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=1)
     connection = client.connect()
-    print(connection)
-    print(client)
+    if debug:
+        print(connection)
+        print(client)
     for x in range(1,255):
         sys.stdout.write("\r"+str(x))
         sys.stdout.flush()
         outp=client.read_coils(0,1,slave=x)
-        print(outp)
+        if debug:
+            print(outp)
         try:
             blah=outp.bits[0]
             sys.stdout.write("\b\b\b")

@@ -30,7 +30,6 @@ async def connect_bus():
         reconnect_delay_max=0
     )
 
-    client.set_max_no_responses(0xFFFFFFFF)
     await client.connect()
     assert client.connected
 

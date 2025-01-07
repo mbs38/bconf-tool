@@ -1,25 +1,46 @@
-# Ugly code following!
+#!/usr/bin/env python3
 import knownendpoints
 import abusliconf
 import array
 import serial
 import argparse
 import time
-
-from pymodbus.pdu import ModbusRequest
-from pymodbus.client import ModbusSerialClient as SerialModbusClient
-from pymodbus.client import ModbusTcpClient as TCPModbusClient
-from pymodbus.transaction import ModbusRtuFramer
-#import logging
-#logging.basicConfig()
-##log = logging.getLogger()
-#log.setLevel(logging.DEBUG)
+import asyncio
+import pymodbus
+import logging
+import pymodbus.client as ModbusClient
 
 
-baudrate = 38400
-parity = 'N'
-port = "/dev/ttyUSB0"
-slave=0 # the slave save this request is targeting
+unit = None
+client: ModbusClient.ModbusBaseClient
+
+async def connect_bus():
+    """Run async client."""
+    global client
+    client = ModbusClient.AsyncModbusSerialClient(
+        "/dev/ttyUSB0",
+        timeout=0.1,
+        retries=0,
+        baudrate=38400,
+        bytesize=8,
+        parity="N",
+        stopbits=1,
+        reconnect_delay=0.1,
+        reconnect_delay_max=0
+    )
+
+    client.set_max_no_responses(0xFFFFFFFF)
+    await client.connect()
+    assert client.connected
+
+async def probe():
+    global client
+    try:
+        result0 = await client.read_coils(2000,count=1,slave=unit)
+        return True
+    except Exception as e:
+        return False
+
 
 IOcffromDevice = [False]*1024
 buttonConf = [False]*16
@@ -34,15 +55,10 @@ fastPwmEnableFromDevice = [False]*16
 ultraSlowPwmEnableFromDevice = [False]*16
 description = ""
 debouncetimeFromDevice = 0
-global version
+version=None
 SwVersions = knownendpoints.SwVersions
 BoardTypes = knownendpoints.BoardTypes
-client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=1.0)
-try:
-    connection = client.connect()
-except:
-    print("Cannot open serial port. Is "+port+" available?")
-    exit()
+
 
 def checkinsanity():
     if abusliconf.debouncetime<8 or abusliconf.debouncetime>25:
@@ -56,11 +72,12 @@ def checkinsanity():
     return False
         
 
-def getFeatures():
-    version = getFwVersion()
+async def getFeatures():
+    global version
+    version = await getFwVersion()
     if(version >= 60000): #device with fw version 15+ => "extended fw/hw identifiers"
         try:
-            result = client.read_holding_registers(10000,3,slave=save)
+            result = await client.read_holding_registers(10000,count=3,slave=unit)
             version=int(result.registers[1])
             devType=int(result.registers[2])
             print("Firmware-Version: "+str(version))
@@ -102,27 +119,9 @@ def getFeatures():
             print(" "+SwVersions[x])
     return version
 
-def probe():
+async def getFwVersion():
     try:
-        result0 = client.read_coils(2000,1,slave=save)
-    except Exception as e:
-        print(e)
-        print("Cannot open serial port. Is "+port+" available?")
-        exit()
-        return False
-    try:
-        print(result0.string)
-    except:
-        print("Client "+str(save)+" available.")
-        return True
-    else:
-        print("Client "+str(save)+" unreachable!")
-        exit()
-        return False
-
-def getFwVersion():
-    try:
-        result = client.read_holding_registers(10000,1,slave=save)
+        result = await client.read_holding_registers(10000,count=1,slave=unit)
         vers=int(result.registers[0])
     except:
         print("Cannot read FW-Version. Maybe legacy or incompatible device?")
@@ -130,26 +129,27 @@ def getFwVersion():
     finally:
         return vers
 
-def readConfs():
-    result0 = client.read_coils(2000,512,slave=save)
-    result1 = client.read_coils(2512,512,slave=save)
-    result2 = client.read_coils(3024,32,slave=save)
-    result3 = client.read_coils(3056,16,slave=save)
+async def readConfs():
+    global version
+    result0 = await client.read_coils(2000,count=512,slave=unit)
+    result1 = await client.read_coils(2512,count=512,slave=unit)
+    result2 = await client.read_coils(3024,count=32,slave=unit)
+    result3 = await client.read_coils(3056,count=16,slave=unit)
     if version>11:
-        result4 = client.read_coils(3120,32,slave=save)
+        result4 = await client.read_coils(3120,count=32,slave=unit)
         for x in range(0, 16):
             patternSavingFromDeviceShortPush[x]=result4.bits[x]
         for x in range(0, 16):
             patternSavingFromDeviceLongPush[x]=result4.bits[x+16]
 
     if version < 9:
-        result8 = client.read_holding_registers(2000,3,slave=save)
+        result8 = await client.read_holding_registers(2000,count=3,slave=unit)
     else:
-        result8 = client.read_holding_registers(2000,5,slave=save)
+        result8 = await client.read_holding_registers(2000,count=5,slave=unit)
     if(version > 2):
-        result5 = client.read_coils(3072,32,slave=save)
-        result6 = client.read_holding_registers(4000,16,slave=save)
-        result7 = client.read_coils(3104,16,slave=save)
+        result5 = await client.read_coils(3072,count=32,slave=unit)
+        result6 = await client.read_holding_registers(4000,count=16,slave=unit)
+        result7 = await client.read_coils(3104,count=16,slave=unit)
         for x in range(0, 32):
                 timerOConfFromDevice[x]=result5.bits[x]
         for x in range(0, 16):
@@ -157,7 +157,7 @@ def readConfs():
         for x in range(0, 16):
                 outDefaultsFromDevice[x]=result7.bits[x]
     if version > 9:
-        resultDescr = client.read_holding_registers(4016,8,slave=save)
+        resultDescr = await client.read_holding_registers(4016,count=8,slave=unit)
         global description
         description=""
         for x in range(0, 8):
@@ -178,19 +178,20 @@ def readConfs():
 
     if version > 21:
         global debouncetimeFromDevice
-        debouncetimeFromDevice = int(client.read_holding_registers(4024,1,slave=save).registers[0])
+        debounce_res = await client.read_holding_registers(4024,count=1,slave=unit)
+        debouncetimeFromDevice = int(debounce_res.registers[0])
 
     if version > 22:
         global fastPwmEnableFromDevice
         global ultraSlowPwmEnableFromDevice
-        resPwm = client.read_coils(3152,32,slave=save)
+        resPwm = await client.read_coils(3152,count=32,slave=unit)
         for x in range(0,16):
             fastPwmEnableFromDevice[x]=resPwm.bits[x] 
         for x in range(0,16):
             ultraSlowPwmEnableFromDevice[x]=resPwm.bits[x+16] 
 
-def compare():
-    readConfs()
+async def compare():
+    await readConfs()
     print("Comparing.")
     abusliconf.readConfFromFile()
     if len(abusliconf.description)>16:
@@ -297,23 +298,23 @@ def compare():
     else:
         return True
     
-def store():
+async def store():
     try:
-        result4 = client.write_register(2000,17239,slave=save)
+        result4 = await client.write_register(2000,17239,slave=unit)
         print("Store: ok")
     except:
         print("Modbus error. Store failed.")
 
-def loadEEPROMcontent():
+async def loadEEPROMcontent():
     print("Trying to load config from EEPROM.")
     try:
-        result4 = client.write_register(2000,17234,slave=save)
+        result4 = await client.write_register(2000,17234,slave=unit)
         print("Loading from EEPROM initiated.")
     except:
         print("Modbus error. Loading from EEPROM failed.")
 
 
-def upload():
+async def upload():
     abusliconf.readConfFromFile()
     
     if len(abusliconf.description)>16:
@@ -336,18 +337,18 @@ def upload():
             print("INFO: Setting longpush threshold to default value: 100")
 
     try:
-        result0 = client.write_coils(2000,abusliconf.ioConf[0:512],slave=save)
-        result0 = client.write_coils(2512,abusliconf.ioConf[512:1024],slave=save)
-        result2 = client.write_coils(3024,abusliconf.oConf,slave=save)
+        result0 = await client.write_coils(2000,abusliconf.ioConf[0:512],slave=unit)
+        result0 = await client.write_coils(2512,abusliconf.ioConf[512:1024],slave=unit)
+        result2 = await client.write_coils(3024,abusliconf.oConf,slave=unit)
         if(version>2):
-            result5 = client.write_coils(3072,abusliconf.timerOConf,slave=save)
-            result7 = client.write_coils(3104,abusliconf.outDefaults, slave=save)
-            result6 = client.write_registers(4000,abusliconf.timervals,slave=save)
-        result3 = client.write_coils(3056,abusliconf.buttonConf,slave=save)
-        result4 = client.write_register(2001,abusliconf.longPushThr,slave=save)
-        result4 = client.write_register(2002,abusliconf.timeoutThr,slave=save)
+            result5 = await client.write_coils(3072,abusliconf.timerOConf,slave=unit)
+            result7 = await client.write_coils(3104,abusliconf.outDefaults, slave=unit)
+            result6 = await client.write_registers(4000,abusliconf.timervals,slave=unit)
+        result3 = await client.write_coils(3056,abusliconf.buttonConf,slave=unit)
+        result4 = await client.write_register(2001,abusliconf.longPushThr,slave=unit)
+        result4 = await client.write_register(2002,abusliconf.timeoutThr,slave=unit)
         if version > 8:
-            result4 = client.write_register(2003,abusliconf.brownoutThr,slave=save)
+            result4 = await client.write_register(2003,abusliconf.brownoutThr,slave=unit)
         if version > 9:
             descrAsInts = [0]*8
             for x in range(0, 8):
@@ -355,119 +356,127 @@ def upload():
                     descrAsInts[x]=int(ord(abusliconf.description[x*2]))
                 if (x*2+1)<len(abusliconf.description):
                     descrAsInts[x]=int(descrAsInts[x]|(ord(abusliconf.description[x*2+1])<<8))
-            result5 = client.write_registers(4016,descrAsInts,slave=save)
+            result5 = await client.write_registers(4016,descrAsInts,slave=unit)
         if version > 11:
-            result5 = client.write_coils(3120,abusliconf.patternSavingShort,slave=save)
-            result5 = client.write_coils(3136,abusliconf.patternSavingLong,slave=save)
+            result5 = await client.write_coils(3120,abusliconf.patternSavingShort,slave=unit)
+            result5 = await client.write_coils(3136,abusliconf.patternSavingLong,slave=unit)
         if version > 21:
-            result5 = client.write_register(4024,abusliconf.debouncetime,slave=save)
+            result5 = await client.write_register(4024,abusliconf.debouncetime,slave=unit)
         if version > 22:
-            result5 = client.write_coils(3152,abusliconf.fastPwmEnable,slave=save)
-            result5 = client.write_coils(3168,abusliconf.ultraSlowPwmEnable,slave=save)
+            result5 = await client.write_coils(3152,abusliconf.fastPwmEnable,slave=unit)
+            result5 = await client.write_coils(3168,abusliconf.ultraSlowPwmEnable,slave=unit)
         print("Upload done.")
     except:
         print("Modbus error during upload.")
 
-parser = argparse.ArgumentParser()
-
-parser.add_argument("command", type=str, help="command to perform. Allowed commands: upload, download, store, compare, eeprom-download")
-parser.add_argument("address", type=int, help="device address")
-parser.add_argument("file", type=str, help="config file source/destination")
-args = parser.parse_args()
-save = args.address
-abusliconf.filename = args.file
-if (args.command == "download"):
-    if probe():
-        version=getFeatures()
-        readConfs()
-    abusliconf.buttonConf=buttonConf
-    abusliconf.ioConf=IOcffromDevice
-    abusliconf.oConf=oConfFromDevice
-    abusliconf.timerOConf=timerOConfFromDevice
-    abusliconf.longPushThr=cmdRegisters[1]
-    abusliconf.timeoutThr=cmdRegisters[2]
-    abusliconf.patternSavingLong=patternSavingFromDeviceLongPush
-    abusliconf.patternSavingShort=patternSavingFromDeviceShortPush
-    if version > 8:
-        abusliconf.brownoutThr=cmdRegisters[3]
-    if version > 9:
-        abusliconf.description=description
-    abusliconf.timervals=timeoutvalsFromDevice
-    abusliconf.outDefaults=outDefaultsFromDevice
-
-
-    if version > 21:
-        abusliconf.debouncetime=debouncetimeFromDevice
-    if version > 22:
-        abusliconf.ultraSlowPwmEnable=ultraSlowPwmEnableFromDevice
-        abusliconf.fastPwmEnable=fastPwmEnableFromDevice
-
-    abusliconf.writeConfToFile()
-    print ("Written to file: "+abusliconf.filename)
-    
-    if(compare()):
-        print("Verification: pass")
+async def run():
+    global version
+    parser = argparse.ArgumentParser()
+    parser.add_argument("command", type=str, help="command to perform. Allowed commands: upload, download, store, compare, eeprom-download")
+    parser.add_argument("address", type=int, help="device address")
+    parser.add_argument("file", type=str, help="config file source/destination")
+    global unit
+    args = parser.parse_args()
+    unit = args.address
+    abusliconf.filename = args.file
+    await connect_bus()
+    if (args.command == "download"):
+        if await probe():
+            version = await getFeatures()
+            await readConfs()
+        abusliconf.buttonConf=buttonConf
+        abusliconf.ioConf=IOcffromDevice
+        abusliconf.oConf=oConfFromDevice
+        abusliconf.timerOConf=timerOConfFromDevice
+        abusliconf.longPushThr=cmdRegisters[1]
+        abusliconf.timeoutThr=cmdRegisters[2]
+        abusliconf.patternSavingLong=patternSavingFromDeviceLongPush
+        abusliconf.patternSavingShort=patternSavingFromDeviceShortPush
+        if version > 8:
+            abusliconf.brownoutThr=cmdRegisters[3]
+        if version > 9:
+            abusliconf.description=description
+        abusliconf.timervals=timeoutvalsFromDevice
+        abusliconf.outDefaults=outDefaultsFromDevice
 
 
-elif (args.command == "compare"):
-    if probe():
-        version=getFeatures()
-        if compare():
+        if version > 21:
+            abusliconf.debouncetime=debouncetimeFromDevice
+        if version > 22:
+            abusliconf.ultraSlowPwmEnable=ultraSlowPwmEnableFromDevice
+            abusliconf.fastPwmEnable=fastPwmEnableFromDevice
+
+        abusliconf.writeConfToFile()
+        print ("Written to file: "+abusliconf.filename)
+
+        if(await compare()):
             print("Verification: pass")
 
-elif(args.command == "eeprom-download"):
-    if probe():
-        version=getFeatures()
-        question=str(input('Warning! Configuration stored in RAM will be overwritten with EEPROM content. Continue? (y/n)'))
-        if(question=='y'):
-            print("Okay.")
-            loadEEPROMcontent()
-            time.sleep(2)
-            readConfs()
-            abusliconf.buttonConf=buttonConf
-            abusliconf.ioConf=IOcffromDevice
-            abusliconf.oConf=oConfFromDevice
-            abusliconf.timerOConf=timerOConfFromDevice
-            abusliconf.longPushThr=cmdRegisters[1]
-            abusliconf.timeoutThr=cmdRegisters[2]
-            abusliconf.patternSavingLong=patternSavingFromDeviceLongPush
-            abusliconf.patternSavingShort=patternSavingFromDeviceShortPush
-            if version >8:
-                abusliconf.brownoutThr=cmdRegisters[3]
-            abusliconf.timervals=timeoutvalsFromDevice
-            abusliconf.outDefaults=outDefaultsFromDevice
-            if version > 9:
-                abusliconf.description=description
-            if version > 21:
-                abusliconf.debouncetime=debouncetimeFromDevice
-            if version > 22:
-                abusliconf.ultraSlowPwmEnable=ultraSlowPwmEnableFromDevice
-                abusliconf.fastPwmEnable=fastPwmEnableFromDevice
-            abusliconf.writeConfToFile()
-            print ("Writing to file: "+abusliconf.filename)
-            if(compare()):
+
+    elif (args.command == "compare"):
+        if await probe():
+            version= await getFeatures()
+            if await compare():
                 print("Verification: pass")
-        else:
-            print("Aborting. Configuration in RAM unchanged. Not written to file "+abusliconf.filename+".")
 
-elif (args.command == "upload"):
-    if probe():
-        version=getFeatures()
-        upload()
-        if(compare()):
-            print("Verification: pass")
+    elif(args.command == "eeprom-download"):
+        if await probe():
+            version = await getFeatures()
+            question=str(input('Warning! Configuration stored in RAM will be overwritten with EEPROM content. Continue? (y/n)'))
+            if(question=='y'):
+                print("Okay.")
+                await loadEEPROMcontent()
+                time.sleep(2)
+                await readConfs()
+                abusliconf.buttonConf=buttonConf
+                abusliconf.ioConf=IOcffromDevice
+                abusliconf.oConf=oConfFromDevice
+                abusliconf.timerOConf=timerOConfFromDevice
+                abusliconf.longPushThr=cmdRegisters[1]
+                abusliconf.timeoutThr=cmdRegisters[2]
+                abusliconf.patternSavingLong=patternSavingFromDeviceLongPush
+                abusliconf.patternSavingShort=patternSavingFromDeviceShortPush
+                if version >8:
+                    abusliconf.brownoutThr=cmdRegisters[3]
+                abusliconf.timervals=timeoutvalsFromDevice
+                abusliconf.outDefaults=outDefaultsFromDevice
+                if version > 9:
+                    abusliconf.description=description
+                if version > 21:
+                    abusliconf.debouncetime=debouncetimeFromDevice
+                if version > 22:
+                    abusliconf.ultraSlowPwmEnable=ultraSlowPwmEnableFromDevice
+                    abusliconf.fastPwmEnable=fastPwmEnableFromDevice
+                abusliconf.writeConfToFile()
+                print ("Writing to file: "+abusliconf.filename)
+                if(await compare()):
+                    print("Verification: pass")
+            else:
+                print("Aborting. Configuration in RAM unchanged. Not written to file "+abusliconf.filename+".")
+
+    elif (args.command == "upload"):
+        if await probe():
+            version=await getFeatures()
+            await upload()
+            if(await compare()):
+                print("Verification: pass")
 
 
-elif (args.command == "store"):
-    if probe():
-        version=getFeatures()
-        if(compare()):
-            print("Verification: pass")
-            store()
-        else:
-            print("Cannot write to EEPROM!")
+    elif (args.command == "store"):
+        if await probe():
+            version= await getFeatures()
+            if(await compare()):
+                print("Verification: pass")
+                await store()
+            else:
+                print("Cannot write to EEPROM!")
 
-else:
-    print("Invalid command. Allowed commands: upload, download, store, compare, eeprom-download")
+    else:
+        print("Invalid command. Allowed commands: upload, download, store, compare, eeprom-download")
 
-client.close()
+    client.close()
+
+if __name__ == "__main__":
+    asyncio.run(
+        run()
+    )

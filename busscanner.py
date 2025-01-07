@@ -16,7 +16,7 @@ BoardTypes = knownendpoints.BoardTypes
 import pymodbus.client as ModbusClient
 client: ModbusClient.ModbusBaseClient
 debug = False
-async def run_async_simple_client():
+async def connect_bus():
     """Run async client."""
     # activate debugging
     global client
@@ -117,7 +117,7 @@ async def run_scan():
 async def run():
     logger = logging.getLogger()
     logging.disable(logging.CRITICAL)
-    await run_async_simple_client(),
+    await connect_bus(),
     await run_scan()
 
 if __name__ == "__main__":

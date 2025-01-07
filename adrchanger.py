@@ -10,7 +10,7 @@ newAdr = None
 unit = None
 client: ModbusClient.ModbusBaseClient
 
-async def run_async_simple_client():
+async def connect_bus():
     """Run async client."""
     global client
     client = ModbusClient.AsyncModbusSerialClient(
@@ -59,7 +59,7 @@ async def chAdr():
 async def run():
     logger = logging.getLogger()
     logging.disable(logging.CRITICAL)
-    await run_async_simple_client()
+    await connect_bus()
     await probe()
     await chAdr()
 

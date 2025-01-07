@@ -1,47 +1,59 @@
 #!/usr/bin/env python3
 import sys
-import pymodbus
-import serial
 import argparse
-from pymodbus.pdu import ModbusRequest
-from pymodbus.client import ModbusSerialClient as SerialModbusClient
-from pymodbus.client import ModbusTcpClient as TCPModbusClient
-from pymodbus.transaction import ModbusRtuFramer
 import knownendpoints
+import asyncio
+import pymodbus
+import logging
 
 baudrate = 38400
 parity = 'N'
 port = "/dev/ttyUSB0"
 failed = 0
+timeout = 1
 BoardTypes = knownendpoints.BoardTypes
 
+import pymodbus.client as ModbusClient
+client: ModbusClient.ModbusBaseClient
 debug = False
+async def run_async_simple_client():
+    """Run async client."""
+    # activate debugging
+    global client
+    client = ModbusClient.AsyncModbusSerialClient(
+        "/dev/ttyUSB0",
+        timeout=0.1,
+        retries=0,
+        baudrate=38400,
+        bytesize=8,
+        parity="N",
+        stopbits=1,
+        reconnect_delay=0.1,
+        reconnect_delay_max=0
+    )
 
-if True:
-    client = SerialModbusClient(method = "rtu", port = port, stopbits = 1, bytesize = 8, parity = parity, baudrate = baudrate, timeout=1)
-    connection = client.connect()
-    if debug:
-        print(connection)
-        print(client)
-    for x in range(1,255):
+    client.set_max_no_responses(0xFFFFFFFF)
+    await client.connect()
+    assert client.connected
+
+async def run_scan():
+    for x in range(1,254):
         sys.stdout.write("\r"+str(x))
         sys.stdout.flush()
-        outp=client.read_coils(0,1,slave=x)
-        if debug:
-            print(outp)
         try:
-            blah=outp.bits[0]
+            outp = await client.read_coils(1,count=1,slave=x)
             sys.stdout.write("\b\b\b")
             sys.stdout.flush()
             sys.stdout.write("Device found, address: "+str(x))
-        except:
+            sys.stdout.flush()
+        except Exception as e:
             continue
         try:
-            fw = client.read_holding_registers(10000,1,slave=x)
+            fw = await client.read_holding_registers(10000,count=1,slave=x)
             fw = fw.registers[0]
             if(fw >= 60000): #device with fw version 15+ => "extended fw/hw identifiers"
                 try:
-                    result = client.read_holding_registers(10000,3,slave=x)
+                    result = await client.read_holding_registers(10000,count=3,slave=x)
                     version=int(result.registers[1])
                     devType=int(result.registers[2])
                     sys.stdout.write(" Firmware-Version: "+str(version))
@@ -71,7 +83,7 @@ if True:
             if(fw>10000 and fw<20000):
                 sys.stdout.write(", device type: WBCv2")
             if version>9:
-                resultDescr = client.read_holding_registers(4016,8,slave=x)
+                resultDescr = await client.read_holding_registers(4016,count=8,slave=x)
                 description=""
                 for y in range(0, 8):
                     description=description+str(chr(resultDescr.registers[y] & 0xFF))
@@ -80,7 +92,7 @@ if True:
                 if len(description)>0:
                     sys.stdout.write(", Description: \""+description+"\"")
             if version>19:
-                result = client.read_holding_registers(10003,3,slave=x)
+                result = await client.read_holding_registers(10003,count=3,slave=x)
                 year=int(result.registers[0])>>8
                 month=int(result.registers[0])&0x00FF
                 day=int(result.registers[1])>>8
@@ -89,7 +101,7 @@ if True:
                 seconds=int(result.registers[2])&0x00FF
                 sys.stdout.write(", Buildtime: "+str(day)+"."+str(month)+"."+str(year)+" "+str(hour)+":"+str(minutes)+":"+str(seconds))
             if version>20:
-                systime = client.read_input_registers(0,4,slave=x)
+                systime = await client.read_input_registers(0,4,slave=x)
                 sys.stdout.write(", Uptime: "+str(systime.registers[0])+" days "+str(systime.registers[1])+":"+str(systime.registers[2])+":"+str(systime.registers[3]))
             sys.stdout.write("\n")
         except:
@@ -99,7 +111,20 @@ if True:
     sys.stdout.write("Scan finished.")
     sys.stdout.write("\n")
     sys.stdout.flush()
-#except:
-#    print("Serial error. Is "+port+" available?")
+     
+    client.close()
+
+async def run():
+    logger = logging.getLogger()
+    logging.disable(logging.CRITICAL)
+    await run_async_simple_client(),
+    await run_scan()
+
+if __name__ == "__main__":
+    asyncio.run(
+        run()
+    )
+
+exit()
 
 client.close()

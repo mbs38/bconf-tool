@@ -52,9 +52,11 @@ patternSavingFromDeviceShortPush = [False]*16
 patternSavingFromDeviceLongPush = [False]*16
 fastPwmEnableFromDevice = [False]*16
 ultraSlowPwmEnableFromDevice = [False]*16
+pushButtonDimmingConfFromDevice = [False]*64
 description = ""
 debouncetimeFromDevice = 0
 version=None
+devType=None
 SwVersions = knownendpoints.SwVersions
 BoardTypes = knownendpoints.BoardTypes
 
@@ -73,6 +75,7 @@ def checkinsanity():
 
 async def getFeatures():
     global version
+    global devType
     version = await getFwVersion()
     if(version >= 60000): #device with fw version 15+ => "extended fw/hw identifiers"
         try:
@@ -187,7 +190,13 @@ async def readConfs():
         for x in range(0,16):
             fastPwmEnableFromDevice[x]=resPwm.bits[x] 
         for x in range(0,16):
-            ultraSlowPwmEnableFromDevice[x]=resPwm.bits[x+16] 
+            ultraSlowPwmEnableFromDevice[x]=resPwm.bits[x+16]
+    if version > 23 and (devType==11 or devType == 9):
+        global pushButtonDimmingConfFromDevice
+        result9 = await client.read_coils(3200,count=64,slave=unit)
+        for x in range(0,64):
+            pushButtonDimmingConfFromDevice[x]=result9.bits[x]
+
 
 async def compare():
     await readConfs()
@@ -289,7 +298,13 @@ async def compare():
         else:
             print("ultra slow pwm settings don't match")
             testResult=1
-            
+
+    if version > 23:
+        if pushButtonDimmingConfFromDevice==abusliconf.pushButtonDimmingConf:
+            pass
+        else:
+            print("push button dimming confs don't match")
+            testResult=1
 
     if testResult == 1:
         print("ERROR: The device's configuration doesn't match the config file!")
@@ -364,6 +379,8 @@ async def upload():
         if version > 22:
             result5 = await client.write_coils(3152,abusliconf.fastPwmEnable,slave=unit)
             result5 = await client.write_coils(3168,abusliconf.ultraSlowPwmEnable,slave=unit)
+        if version > 23 and (devType==11 or devType == 9):
+            result5 = await client.write_coils(3200,abusliconf.pushButtonDimmingConf,slave=unit)
         print("Upload done.")
     except:
         print("Modbus error during upload.")
@@ -404,6 +421,9 @@ async def run():
         if version > 22:
             abusliconf.ultraSlowPwmEnable=ultraSlowPwmEnableFromDevice
             abusliconf.fastPwmEnable=fastPwmEnableFromDevice
+
+        if version > 23:
+            abusliconf.pushButtonDimmingConf = pushButtonDimmingConfFromDevice
 
         abusliconf.writeConfToFile()
         print ("Written to file: "+abusliconf.filename)

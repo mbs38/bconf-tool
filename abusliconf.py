@@ -26,6 +26,8 @@ patternSavingShort=[False]*16
 patternSavingLong=[False]*16
 fastPwmEnable = [False]*16
 ultraSlowPwmEnable = [False]*16
+pushButtonDimmingConf = [False]*64
+
 debouncetime=0
 
 def readConfFromFile():
@@ -110,6 +112,11 @@ def readConfFromFile():
                                 patternSavingLong[sectionList.index(sections)]=True
                 except:
                         patternSavingLong[sectionList.index(sections)]=False
+
+                try:
+                        pushButtonDimmingOuts = list(map(int,config.get(sections, 'pushbutton-dimming').split(',')))
+                except:
+                        pushButtonDimmingOuts = []
                 
                 ########################### Arrange data, copy into boolean list ###############################
                 if sectionList.index(sections)>7:
@@ -162,12 +169,18 @@ def readConfFromFile():
                                 ioConf[bitLocation]=True
                 #       print(str(longOff[x])+": Bit"+str(bitLocation))
                 
-                if switchType == "toggle-switch":
-                #       print("Input"+str(sectionList.index(sections))+": Schalter")
+                if switchType == "toggle-switch": # schalter nicht taster
                         buttonConf[sectionList.index(sections)]=True
-                #else:
-                #       print("Input"+str(sectionList.index(sections))+": Taster")
-                
+                else: # push button dimming gibt keinen Sinn wenn es Schalter sind
+                        if sectionList.index(sections)<8:
+                                for x in range(0,len(pushButtonDimmingOuts)):
+                                        if (pushButtonDimmingOuts[x] < 8):
+                                                bitLocation = pushButtonDimmingOuts[x]+multiplier
+                                                pushButtonDimmingConf[bitLocation] = True
+                                        else:
+                                                raise Exception("Output for dimming doesn't exist")
+
+
         for outputsection in outputList:
                 try:
                         oConfStr = config.get(outputsection, 'input-controlled')
@@ -240,6 +253,8 @@ def writeConfToFile():
                 configwriter.set(section, 'switch-type', 'push-button')
                 configwriter.set(section, 'pattern-saving-shortpush', 'off')
                 configwriter.set(section, 'pattern-saving-longpush', 'off')
+                configwriter.set(section, 'pushbutton-dimming','')
+
         for outputsection in outputList:
                 try:
                         configwriter.add_section(outputsection)
@@ -250,7 +265,7 @@ def writeConfToFile():
                 configwriter.set(outputsection, 'timeout-value','0')
                 configwriter.set(outputsection, 'default-state', 'off')
                 configwriter.set(outputsection, 'pwm', 'off')
-                
+
 
 ####################### prepare lists for config file #####################################
         for x in range(0,16):
@@ -270,6 +285,7 @@ def writeConfToFile():
                 shortOff = []
                 longOn = []
                 longOff = []
+                pushButtonDimmingOuts = []
                 
                 if sectionList.index(section)>7:
                         skip = 512
@@ -303,6 +319,11 @@ def writeConfToFile():
                                 longOff.append(x)
                         if x>7 and ioConf[x-8+256+64+128+multiplier+skip]==True:
                                 longOff.append(x)
+                
+                for x in range(0,8):
+                        if pushButtonDimmingConf[x+multiplier] == True:
+                                pushButtonDimmingOuts.append(x)
+
 
                 
 ######################### finally, write to file ##################################
@@ -310,6 +331,7 @@ def writeConfToFile():
                 configwriter.set(section, 'short-off', ','.join(map(str,shortOff)))
                 configwriter.set(section, 'long-on', ','.join(map(str,longOn)))
                 configwriter.set(section, 'long-off', ','.join(map(str,longOff)))
+                configwriter.set(section, 'pushbutton-dimming', ','.join(map(str,pushButtonDimmingOuts)))
                 
         for outputsection in outputList:
                 if(oConf[outputList.index(outputsection)+16]):
